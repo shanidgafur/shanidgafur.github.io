@@ -5,8 +5,8 @@
     <description>This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..</description>
     <link>https://shanidgafur.github.io//</link>
     <atom:link href="https://shanidgafur.github.io//feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 20 Mar 2016 22:12:17 -0400</pubDate>
-    <lastBuildDate>Sun, 20 Mar 2016 22:12:17 -0400</lastBuildDate>
+    <pubDate>Sun, 20 Mar 2016 22:15:27 -0400</pubDate>
+    <lastBuildDate>Sun, 20 Mar 2016 22:15:27 -0400</lastBuildDate>
     <generator>Jekyll v3.1.2</generator>
     
       <item>
@@ -17,10 +17,10 @@
 &lt;p&gt;In case you haven’t already checked it out, head on over to the &lt;a href=&quot;jekyll-themes&quot;&gt;jekyll themes&lt;/a&gt; site to check out the wide range of possibilities. The gallery of themes is pretty darn impressive and it’s hard not to find at least a few that you like. I finally settled on a nice minimalistic theme by &lt;a href=&quot;josh-gerdes&quot;&gt;Josh Gerdes&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h4 id=&quot;before&quot;&gt;Before&lt;/h4&gt;
-&lt;p&gt;&lt;img src=&quot;http://localhost:4000/images/posts/basic-look.png&quot; alt=&quot;Before&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/posts/basic-look.png&quot; alt=&quot;Before&quot; /&gt;&lt;/p&gt;
 
 &lt;h4 id=&quot;after&quot;&gt;After&lt;/h4&gt;
-&lt;p&gt;&lt;img src=&quot;http://localhost:4000/images/posts/themed-look.png&quot; alt=&quot;After&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/posts/themed-look.png&quot; alt=&quot;After&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Knowing me, I’m probably not even close to done tinkering with this site. Continuing to enjoy jekyll and the ecosystem of plugins, themes etc that are supported. Have a suggestion for tweaking things further? A plugin that you’d like to recommend, perhaps? Add a note in the comments section below…&lt;/p&gt;
 
