@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width initial-scale=1" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <title>Blog</title>
+  <title>Categories</title>
   <meta name="description" content="This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..">
   <meta name="author" content="Shanid Gafur">
   <meta name="HandheldFriendly" content="True">
@@ -43,7 +43,7 @@
   <meta name="theme-color" content="#ffffff">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="https://shanidgafur.github.io//blog/">
+  <link rel="canonical" href="https://shanidgafur.github.io//categories/">
   <link rel="alternate" type="application/rss+xml" title="about:software" href="/feed.xml">
 </head>
 
@@ -132,29 +132,61 @@
 
     <div class="content-wrapper">
       <div class="content-wrapper__inner">
-        <h1 class="post-heading">Posts</h1>
+        <h2>Categories:</h2>
+<div class="categories"> 
+ 
+  <a href="#jekyll">jekyll</a>
+ 
+  <a href="#github-pages">github-pages</a>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Mar 20, 2016</span>
+</div>
 
-        <h2 class="post-list__post-title post-title">
-          <a class="post-title" href="/blog/blog-facelift">Blog face lift</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Mar 16, 2016</span>
+<!-- iterate through all categories on the site --> 
+ 
+  <!-- for each tag, create an anchor by using the tag name as an id --> 
+  <div id="jekyll">  
+    <h3> jekyll </h3>  <!-- for create a heading --> 
 
-        <h2 class="post-list__post-title post-title">
-          <a class="post-title" href="/blog/setting-up-this-blog">Setting up this blog</a>
-        </h2>
-      </li>
-    
-  </ul>
+    <ul> <!-- create the list of posts -->
+      <!-- iterate through all the posts on the site --> 
+       
+        <!-- list only those which contain the current tag --> 
+         
+            <li>
+              <a href="/blog/blog-facelift">Blog face lift</a>
+            </li>
+        
+       
+        <!-- list only those which contain the current tag --> 
+         
+            <li>
+              <a href="/blog/setting-up-this-blog">Setting up this blog</a>
+            </li>
+        
+      
+    </ul>
+  </div>
+ 
+  <!-- for each tag, create an anchor by using the tag name as an id --> 
+  <div id="github-pages">  
+    <h3> github-pages </h3>  <!-- for create a heading --> 
 
-  <p class="rss-subscribe">subscribe <a href="/feed.xml">via RSS</a></p>
+    <ul> <!-- create the list of posts -->
+      <!-- iterate through all the posts on the site --> 
+       
+        <!-- list only those which contain the current tag --> 
+        
+       
+        <!-- list only those which contain the current tag --> 
+         
+            <li>
+              <a href="/blog/setting-up-this-blog">Setting up this blog</a>
+            </li>
+        
+      
+    </ul>
+  </div>
+
       </div>
 
       <footer class="footer">
