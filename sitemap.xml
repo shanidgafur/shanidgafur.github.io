@@ -3,6 +3,21 @@
   
     
     <url>
+      <loc>https://shanidgafur.github.io/blog/apache-avro-on-dotnet</loc>
+      
+        <lastmod>2016-04-07T00:00:00-04:00</lastmod>
+      
+      
+        <changefreq>monthly</changefreq>
+      
+      
+        <priority>0.5</priority>
+      
+    </url>
+    
+  
+    
+    <url>
       <loc>https://shanidgafur.github.io/blog/blog-facelift</loc>
       
         <lastmod>2016-03-20T00:00:00-04:00</lastmod>
@@ -36,7 +51,7 @@
     <url>
       <loc>https://shanidgafur.github.io/about/</loc>
       
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
+        <lastmod>2016-04-07T22:52:18-04:00</lastmod>
       
       
         <changefreq>monthly</changefreq>
@@ -51,7 +66,7 @@
     <url>
       <loc>https://shanidgafur.github.io/categories/</loc>
       
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
+        <lastmod>2016-04-07T22:52:18-04:00</lastmod>
       
       
         <changefreq>monthly</changefreq>
@@ -66,7 +81,7 @@
     <url>
       <loc>https://shanidgafur.github.io/feed.xml</loc>
       
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
+        <lastmod>2016-04-07T22:52:18-04:00</lastmod>
       
       
         <changefreq>monthly</changefreq>
@@ -81,7 +96,7 @@
     <url>
       <loc>https://shanidgafur.github.io/blog/</loc>
       
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
+        <lastmod>2016-04-07T22:52:18-04:00</lastmod>
       
       
         <changefreq>monthly</changefreq>
@@ -96,7 +111,7 @@
     <url>
       <loc>https://shanidgafur.github.io/</loc>
       
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
+        <lastmod>2016-04-07T22:52:18-04:00</lastmod>
       
       
         <changefreq>monthly</changefreq>
@@ -107,19 +122,6 @@
     </url>
     
   
-    
-    <url>
-      <loc>https://shanidgafur.github.io/js/main.js</loc>
-      
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
-      
-      
-        <changefreq>monthly</changefreq>
-      
-      
-        <priority>0.3</priority>
-      
-    </url>
     
   
     
@@ -128,7 +130,7 @@
     <url>
       <loc>https://shanidgafur.github.io/tags/</loc>
       
-        <lastmod>2016-04-01T21:28:29-04:00</lastmod>
+        <lastmod>2016-04-07T22:52:18-04:00</lastmod>
       
       
         <changefreq>monthly</changefreq>
