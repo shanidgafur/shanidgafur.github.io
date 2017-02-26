@@ -16,3 +16,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+images/favicons/Thumbs.db
+*.db
+images/posts/Thumbs.db

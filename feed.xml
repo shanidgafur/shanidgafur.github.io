@@ -5,9 +5,127 @@
     <description>This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..</description>
     <link>https://shanidgafur.github.io//</link>
     <atom:link href="https://shanidgafur.github.io//feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 12 Apr 2016 22:32:09 -0400</pubDate>
-    <lastBuildDate>Tue, 12 Apr 2016 22:32:09 -0400</lastBuildDate>
+    <pubDate>Sun, 26 Feb 2017 16:11:30 -0500</pubDate>
+    <lastBuildDate>Sun, 26 Feb 2017 16:11:30 -0500</lastBuildDate>
     <generator>Jekyll v3.1.2</generator>
+    
+      <item>
+        <title>Akamai log ingest and analysis with AWS</title>
+        <description>&lt;p&gt;In real world production systems, we’re always forced to concede that systems inevitably fail and we always should have our tooling ready to help us detect and fix issues as soon as they occur. We have to do this before minor issues start cascading to broader issues that start impacting our customers or our bottom lines. Having reliable log data and the ability to parse through and inspect thousands/millions of log lines in near real time can make or break our troubleshooting efforts.&lt;/p&gt;
+
+&lt;p&gt;For web applications that are delivered on the Akamai platform, a lot of the information for troubleshooting and, more generally, understanding traffic patterns and trends is available for us on the &lt;a href=&quot;https://control.akamai.com&quot;&gt;Luna&lt;/a&gt; portal. However, if we need a slightly more granular analysis of the data or a closer-to-real-time feel of the data, Akamai’s CloudMonitor feature is the way to go. CloudMonitor does have native support for enterrpise scale analysis tools like Splunk and SumoLogic, but if you’re looking for an easy and relatively cheap way to start looking at the data, Amazon Web Services (AWS) has a few services that’ll help you get going.&lt;/p&gt;
+
+&lt;p&gt;In this blog post, I’ll try to focus more on the data ingest part of this equation and less on the Akamai property configs needed to set this up. Akamai professional services and/or the CloudMonitor product documentation can help with the latter.&lt;/p&gt;
+
+&lt;h3 id=&quot;integration-approach&quot;&gt;Integration Approach&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/posts/CloudMonitor-AWS-Integration.png&quot; alt=&quot;Architecture&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;There are a few distinct services that I had used to scale up my implementation to a state that I felt comfortable. Some of these may become more or less pertinent for your use case depending on factors like traffic to your site (the more visitors you have, the more log lines that need to flow over), data retention needs etc.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;API Gateway:&lt;/strong&gt;
+The configuration for CloudMonitor delivery config in Akamai requires specifies am API end point that accepts &lt;code class=&quot;highlighter-rouge&quot;&gt;HTTP POST&lt;/code&gt; requests. AWS API Gateway gives us an easy way to setup such an end point for CloudMonitor. For high traffic sites, expect to have a significant hits per second ratio. So as to not introduce any latency to the end point, it is very important for the API to do as minimal as possible to capture the payload and respond back with a 200 OK status code. The easiest way to accomplish this is to have the API write the payload as such to queue or topic based messaging middleware. This is where AWS Kinesis Streams comes in. API Gateway can be used to map the incoming request to Kinesis Streams (or any other AWS service, for that matter) relatively easily.&lt;/p&gt;
+
+&lt;p&gt;In order to map the incoming payload to a Kinesis message, create a body mapping template for Content-Type &lt;code class=&quot;highlighter-rouge&quot;&gt;application/json&lt;/code&gt; with the following configuration&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;StreamName&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;CloudMonitorStream&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;Data&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;$util.base64Encode($input.body)&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;PartitionKey&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;$context.identity.sourceIp&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;In plain english, this configuration takes the &lt;code class=&quot;highlighter-rouge&quot;&gt;HTTP POST&lt;/code&gt; body, base-64 encodes it and writes to a Kinesis Stream called CloudMonitorStream. Additionally, it uses the IP address of the client calling it as the partition key for sharding the data into of many partitions of the CloudMonitorStream.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Kinesis Streams:&lt;/strong&gt;
+AWS Kinesis Streams gives us the ability to ingest large amounts of data and durably store that data while process the payload. The only real configuration needed for the Stream is to define the number of shards or partitions for the data. From the AWS documentation,&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;n&quot;&gt;number_of_shards&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;incoming_write_bandwidth_in_KB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;outgoing_read_bandwidth_in_KB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;where&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;incoming_write_bandwidth_in_KB&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;average_data_size_in_KB&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;records_per_second&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;and&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;outgoing_read_bandwidth_in_KB&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;incoming_write_bandwidth_in_KB&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number_of_consumers&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;strong&gt;Lambda:&lt;/strong&gt; Now that we’ve gotten to a state where we can accept the payload and temporarily store it for processing, it’s time for the actual data processing to begin. This is where AWS Lambda comes into play. Lambda, if you haven’t used it yet, is the AWS implementation of the broader trend usually refered to as &lt;em&gt;serverless computing&lt;/em&gt;. Lambda allows us to write code in our language of choice (currently support Java, Python, node.js and C#), and have that code get triggered automatically in response to events raised outside of that code.&lt;/p&gt;
+
+&lt;p&gt;The code that get triggered can be used to do pretty much anything that that the runtime language supports. For this use case, I used Lambda to strip out some characters in the payload that were making life difficult downstream in ElasticSearch. I also modified the latitutde and longitude data in my CloudMonitor payload to look more like an ElasticSearch &lt;code class=&quot;highlighter-rouge&quot;&gt;geo_point&lt;/code&gt; data type. Code snippet below to give you an idea of what I mean by this.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;n&quot;&gt;json_input&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loads&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;try&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;lat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;json_input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;geo&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;][&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;lat&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;lon&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;float&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;json_input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;geo&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;][&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;long&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;except&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;lat&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.00&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;lon&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.00&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;geolocation&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;lat&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;lon&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lon&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;json_input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;geo&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;][&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;location&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;geolocation&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;output&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;json&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dumps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;json_input&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This bit of code changes out my CloudMonitor payload from&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;s2&quot;&gt;&quot;geo&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;country&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;US&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;region&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;IL&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;city&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;SPRINGFIELD&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;lat&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;39.7998&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;long&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-89.6494&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;to this&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;s2&quot;&gt;&quot;geo&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;city&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;SPRINGFIELD&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;country&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;US&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;region&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;IL&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;long&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-89.6494&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;location&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+           &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;lat&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;39.7998&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+           &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;lon&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;-89.6494&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+       &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;lat&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;39.7998&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+   &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Once we have the data payload formatted and modified, we can write out this formatted json object into my Kinesis Firehose instance.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Kinesis Firehose:&lt;/strong&gt;
+Although, they’re both branded “Kinesis” by AWS, the function of Kinesis Firehose is slightly different from the function of Kinesis Streams. The objective with using Kinesis Firehose is to transfer data from a source to a defined data sink like S3, ElasticSearch Service or Redshift. Firehose helps manage logic for retry, failures etc for the data that is flowing through it. Configuration for Firehose instances are quite painless and very easy to manage.&lt;/p&gt;
+
+&lt;p&gt;With the help of Firehose, we should be able to write data into one of the supported data sinks where we can subsequently analyze and visualize the data from CloudMonitor to our hearts content!&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/posts/CloudMonitor-KibanaChart.png&quot; alt=&quot;CloudMonitor-Visualization&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Image: HTTP Response codes over time&lt;/em&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;
+
+&lt;p&gt;By putting together the AWS services highlighted above, we’ve created a solution to ingest large volumes of log data from Akamai CloudMonitor to a data store that we can use for data discovery and analysis. While this blog post talks about this approach in the context of Akamai, these AWS services could really be used for ingest and processing of any large stream of data.&lt;/p&gt;
+
+&lt;p&gt;If you need additional details about any aspect of this integration, or if you have alternate approaches that you’d like to share, please post a comment below.&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 26 Feb 2017 00:00:00 -0500</pubDate>
+        <link>https://shanidgafur.github.io//blog/akamai-cloudmonitor-on-AWS</link>
+        <guid isPermaLink="true">https://shanidgafur.github.io//blog/akamai-cloudmonitor-on-AWS</guid>
+        
+        <category>Akamai</category>
+        
+        <category>AWS</category>
+        
+        <category>Kinesis</category>
+        
+        <category>Lambda</category>
+        
+        
+        <category>Akamai</category>
+        
+        <category>AWS</category>
+        
+        <category>Kinesis</category>
+        
+        <category>Lambda</category>
+        
+      </item>
     
       <item>
         <title>Apache Kafka Integration with .net</title>
@@ -310,7 +428,7 @@
 
 &lt;p&gt;For what it’s worth, I’ve discovered there’s quite a few blog posts out there that talk through all of the steps outlined below, in quite a bit more detail. You can consider this the TL;DR version of those posts.&lt;/p&gt;
 
-&lt;h4 id=&quot;domain-setup-gihubio&quot;&gt;Domain Setup: Gihub.io&lt;/h4&gt;
+&lt;h4 id=&quot;domain-setup-githubio&quot;&gt;Domain Setup: Github.io&lt;/h4&gt;
 &lt;p&gt;This is super straight forward, and there’s really nothing more that I can add to the documentation from &lt;a href=&quot;https://pages.github.com/&quot;&gt;Github Pages&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h4 id=&quot;jekyll-installation&quot;&gt;Jekyll Installation&lt;/h4&gt;

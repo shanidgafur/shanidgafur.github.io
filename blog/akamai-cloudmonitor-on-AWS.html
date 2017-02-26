@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Akamai log ingest and analysis with AWS</title>
+  <meta name="description" content="This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..">
+  <meta name="author" content="Shanid Gafur">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="about:software">
+  <meta name="twitter:description" content="This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="about:software">
+  <meta property="og:description" content="This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..">
+
+  <link rel="apple-touch-icon" sizes="57x57" href="/images/favicons/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/images/favicons/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/images/favicons/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/images/favicons/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/images/favicons/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/images/favicons/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/images/favicons/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/images/favicons/apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon-180x180.png">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-32x32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-194x194.png" sizes="194x194">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/images/favicons/android-chrome-192x192.png" sizes="192x192">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-16x16.png" sizes="16x16">
+  <link rel="manifest" href="/images/favicons/manifest.json">
+  <link rel="shortcut icon" href="/images/favicons/favicon.ico">
+  <meta name="msapplication-TileColor" content="#ffc40d">
+  <meta name="msapplication-TileImage" content="/images/favicons/mstile-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="https://shanidgafur.github.io//blog/akamai-cloudmonitor-on-AWS">
+  <link rel="alternate" type="application/rss+xml" title="about:software" href="/feed.xml">
+</head>
+
+
+  <body>
+    <span class="mobile btn-mobile-menu">
+  <i class="icon icon-list btn-mobile-menu__icon"></i>
+  <i class="icon icon-x-circle btn-mobile-close__icon hidden"></i>
+</span>
+  
+<header class="panel-cover" style="background-image: url(/images/cover.jpg)">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+        <a href="/" title="link to home of about:software">
+          <img src="/images/profile.jpg" class="user-image" alt="My Profile Photo">
+          <h1 class="panel-cover__title panel-title">about:software</h1>
+        </a>
+        <hr class="panel-cover__divider">
+        <p class="panel-cover__description">This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary">
+
+        <div class="navigation-wrapper">
+
+          <nav class="cover-navigation cover-navigation--primary">
+            <ul class="navigation">
+              <li class="navigation__item"><a href="/#blog" title="link to about:software blog" class="blog-button">Blog</a></li>
+            </ul>
+          </nav>
+          <nav class="cover-navigation cover-navigation--primary">
+            <ul class="navigation">
+              <li class="navigation__item"><a href="/about" title="link to about:software about" class="blog-button">About</a></li>
+            </ul>
+          </nav>
+          <nav class="cover-navigation navigation--social">
+            <ul class="navigation">
+          
+            
+
+            
+
+            
+              <!-- LinkedIn -->
+              <li class="navigation__item">
+                <a href="https://www.linkedin.com/in/shanidgafur" title="shanidgafur on LinkedIn" target="_blank">
+                  <i class="icon icon-social-linkedin"></i>
+                  <span class="label">LinkedIn</span>
+                </a>
+              </li>
+            
+
+            
+              <!-- GitHub -->
+              <li class="navigation__item">
+                <a href="https://www.github.com/shanidgafur" title="shanidgafur on GitHub" target="_blank">
+                  <i class="icon icon-social-github"></i>
+                  <span class="label">GitHub</span>
+                </a>
+              </li>
+            
+
+            
+
+            <!-- RSS -->
+            <li class="navigation__item">
+              <a href="/feed.xml" title="Subscribe" target="_blank">
+                <i class="icon icon-rss"></i>
+                <span class="label">RSS</span>
+              </a>
+            </li>
+          
+            </ul>
+          </nav>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="panel-cover--overlay"></div>
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+      <div class="content-wrapper__inner">
+        <article class="post-container post-container--single">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="26 Feb 2017" class="post-meta__date date">26 Feb 2017</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#Akamai">Akamai</a> <a href="/tags/#AWS">AWS</a> <a href="/tags/#Kinesis">Kinesis</a> <a href="/tags/#Lambda">Lambda</a> </span>
+    </div>
+    <h1 class="post-title">Akamai log ingest and analysis with AWS</h1>
+  </header>
+
+  <section class="post">
+    <p>In real world production systems, we’re always forced to concede that systems inevitably fail and we always should have our tooling ready to help us detect and fix issues as soon as they occur. We have to do this before minor issues start cascading to broader issues that start impacting our customers or our bottom lines. Having reliable log data and the ability to parse through and inspect thousands/millions of log lines in near real time can make or break our troubleshooting efforts.</p>
+
+<p>For web applications that are delivered on the Akamai platform, a lot of the information for troubleshooting and, more generally, understanding traffic patterns and trends is available for us on the <a href="https://control.akamai.com">Luna</a> portal. However, if we need a slightly more granular analysis of the data or a closer-to-real-time feel of the data, Akamai’s CloudMonitor feature is the way to go. CloudMonitor does have native support for enterrpise scale analysis tools like Splunk and SumoLogic, but if you’re looking for an easy and relatively cheap way to start looking at the data, Amazon Web Services (AWS) has a few services that’ll help you get going.</p>
+
+<p>In this blog post, I’ll try to focus more on the data ingest part of this equation and less on the Akamai property configs needed to set this up. Akamai professional services and/or the CloudMonitor product documentation can help with the latter.</p>
+
+<h3 id="integration-approach">Integration Approach</h3>
+
+<p><img src="/images/posts/CloudMonitor-AWS-Integration.png" alt="Architecture" /></p>
+
+<p>There are a few distinct services that I had used to scale up my implementation to a state that I felt comfortable. Some of these may become more or less pertinent for your use case depending on factors like traffic to your site (the more visitors you have, the more log lines that need to flow over), data retention needs etc.</p>
+
+<p><strong>API Gateway:</strong>
+The configuration for CloudMonitor delivery config in Akamai requires specifies am API end point that accepts <code class="highlighter-rouge">HTTP POST</code> requests. AWS API Gateway gives us an easy way to setup such an end point for CloudMonitor. For high traffic sites, expect to have a significant hits per second ratio. So as to not introduce any latency to the end point, it is very important for the API to do as minimal as possible to capture the payload and respond back with a 200 OK status code. The easiest way to accomplish this is to have the API write the payload as such to queue or topic based messaging middleware. This is where AWS Kinesis Streams comes in. API Gateway can be used to map the incoming request to Kinesis Streams (or any other AWS service, for that matter) relatively easily.</p>
+
+<p>In order to map the incoming payload to a Kinesis message, create a body mapping template for Content-Type <code class="highlighter-rouge">application/json</code> with the following configuration</p>
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nt">"StreamName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CloudMonitorStream"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"Data"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"$util.base64Encode($input.body)"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"PartitionKey"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"$context.identity.sourceIp"</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+<p>In plain english, this configuration takes the <code class="highlighter-rouge">HTTP POST</code> body, base-64 encodes it and writes to a Kinesis Stream called CloudMonitorStream. Additionally, it uses the IP address of the client calling it as the partition key for sharding the data into of many partitions of the CloudMonitorStream.</p>
+
+<p><strong>Kinesis Streams:</strong>
+AWS Kinesis Streams gives us the ability to ingest large amounts of data and durably store that data while process the payload. The only real configuration needed for the Stream is to define the number of shards or partitions for the data. From the AWS documentation,</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">number_of_shards</span> <span class="o">=</span> <span class="n">max</span><span class="p">(</span><span class="n">incoming_write_bandwidth_in_KB</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span> <span class="n">outgoing_read_bandwidth_in_KB</span><span class="o">/</span><span class="mi">2000</span><span class="p">)</span>
+
+<span class="n">where</span>
+<span class="n">incoming_write_bandwidth_in_KB</span> <span class="o">=</span> <span class="n">average_data_size_in_KB</span> <span class="n">x</span> <span class="n">records_per_second</span>
+<span class="n">and</span>
+<span class="n">outgoing_read_bandwidth_in_KB</span> <span class="o">=</span> <span class="n">incoming_write_bandwidth_in_KB</span> <span class="n">x</span> <span class="n">number_of_consumers</span></code></pre></figure>
+
+<p><strong>Lambda:</strong> Now that we’ve gotten to a state where we can accept the payload and temporarily store it for processing, it’s time for the actual data processing to begin. This is where AWS Lambda comes into play. Lambda, if you haven’t used it yet, is the AWS implementation of the broader trend usually refered to as <em>serverless computing</em>. Lambda allows us to write code in our language of choice (currently support Java, Python, node.js and C#), and have that code get triggered automatically in response to events raised outside of that code.</p>
+
+<p>The code that get triggered can be used to do pretty much anything that that the runtime language supports. For this use case, I used Lambda to strip out some characters in the payload that were making life difficult downstream in ElasticSearch. I also modified the latitutde and longitude data in my CloudMonitor payload to look more like an ElasticSearch <code class="highlighter-rouge">geo_point</code> data type. Code snippet below to give you an idea of what I mean by this.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">json_input</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">json_input</span><span class="p">[</span><span class="s">'geo'</span><span class="p">][</span><span class="s">'lat'</span><span class="p">])</span>
+        <span class="n">lon</span>  <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">json_input</span><span class="p">[</span><span class="s">'geo'</span><span class="p">][</span><span class="s">'long'</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="mf">0.00</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="mf">0.00</span>
+        <span class="k">pass</span>
+    <span class="n">geolocation</span> <span class="o">=</span> <span class="p">{</span><span class="s">"lat"</span><span class="p">:</span><span class="n">lat</span><span class="p">,</span><span class="s">"lon"</span><span class="p">:</span> <span class="n">lon</span><span class="p">}</span>
+    <span class="n">json_input</span><span class="p">[</span><span class="s">'geo'</span><span class="p">][</span><span class="s">'location'</span><span class="p">]</span> <span class="o">=</span> <span class="n">geolocation</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">json_input</span><span class="p">)</span></code></pre></figure>
+
+<p>This bit of code changes out my CloudMonitor payload from</p>
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="s2">"geo"</span><span class="err">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nt">"country"</span><span class="p">:</span><span class="w"> </span><span class="s2">"US"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"IL"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"city"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SPRINGFIELD"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"lat"</span><span class="p">:</span><span class="w"> </span><span class="s2">"39.7998"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"long"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-89.6494"</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+<p>to this</p>
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="s2">"geo"</span><span class="err">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+       </span><span class="nt">"city"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SPRINGFIELD"</span><span class="p">,</span><span class="w">
+       </span><span class="nt">"country"</span><span class="p">:</span><span class="w"> </span><span class="s2">"US"</span><span class="p">,</span><span class="w">
+       </span><span class="nt">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"IL"</span><span class="p">,</span><span class="w">
+       </span><span class="nt">"long"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-89.6494"</span><span class="p">,</span><span class="w">
+       </span><span class="nt">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+           </span><span class="nt">"lat"</span><span class="p">:</span><span class="w"> </span><span class="mf">39.7998</span><span class="p">,</span><span class="w">
+           </span><span class="nt">"lon"</span><span class="p">:</span><span class="w"> </span><span class="mf">-89.6494</span><span class="w">
+       </span><span class="p">},</span><span class="w">
+       </span><span class="nt">"lat"</span><span class="p">:</span><span class="w"> </span><span class="s2">"39.7998"</span><span class="w">
+   </span><span class="p">}</span></code></pre></figure>
+
+<p>Once we have the data payload formatted and modified, we can write out this formatted json object into my Kinesis Firehose instance.</p>
+
+<p><strong>Kinesis Firehose:</strong>
+Although, they’re both branded “Kinesis” by AWS, the function of Kinesis Firehose is slightly different from the function of Kinesis Streams. The objective with using Kinesis Firehose is to transfer data from a source to a defined data sink like S3, ElasticSearch Service or Redshift. Firehose helps manage logic for retry, failures etc for the data that is flowing through it. Configuration for Firehose instances are quite painless and very easy to manage.</p>
+
+<p>With the help of Firehose, we should be able to write data into one of the supported data sinks where we can subsequently analyze and visualize the data from CloudMonitor to our hearts content!</p>
+
+<p><img src="/images/posts/CloudMonitor-KibanaChart.png" alt="CloudMonitor-Visualization" /></p>
+
+<p><em>Image: HTTP Response codes over time</em></p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>By putting together the AWS services highlighted above, we’ve created a solution to ingest large volumes of log data from Akamai CloudMonitor to a data store that we can use for data discovery and analysis. While this blog post talks about this approach in the context of Akamai, these AWS services could really be used for ingest and processing of any large stream of data.</p>
+
+<p>If you need additional details about any aspect of this integration, or if you have alternate approaches that you’d like to share, please post a comment below.</p>
+
+
+  </section>
+  <section id="disqus_thread"></section><!-- /#disqus_thread -->
+</article>
+
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'shanid'; // required: replace example with your forum shortname
+        var disqus_config = function () {
+          this.page.url = 'https://shanidgafur.github.io/blog/akamai-cloudmonitor-on-AWS';
+          this.page.identifier = '/blog/Akamai-Log-Ingest-With-AWS';
+          this.page.title = 'Akamai log ingest and analysis with AWS';
+        };
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function () {
+            var s = document.createElement('script'); s.async = true;
+            s.type = 'text/javascript';
+            s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+            (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+        }());
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+      </div>
+
+      <footer class="footer">
+  <span class="footer__copyright">&copy; 2017 Shanid Gafur. All rights reserved.</span>
+</footer> 
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-597490-5', 'auto');
+  ga('send', 'pageview');
+</script>
+
+    </div>
+  </body>
+</html>
