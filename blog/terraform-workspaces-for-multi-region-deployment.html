@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>Using Terraform Workspaces for Multi-Region Deployments in AWS</title>
+  <meta name="description" content="An overview for using Terraform workspaces to deploy resources across multiple regions in AWS">
+  <meta name="author" content="Shanid Gafur">
+  <meta name="keywords" content="AWS, Terraform, ">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="about:software">
+  <meta name="twitter:description" content="This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="about:software">
+  <meta property="og:description" content="This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..">
+
+  <link rel="apple-touch-icon" sizes="57x57" href="/images/favicons/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/images/favicons/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/images/favicons/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/images/favicons/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/images/favicons/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/images/favicons/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/images/favicons/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/images/favicons/apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon-180x180.png">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-32x32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-194x194.png" sizes="194x194">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/images/favicons/android-chrome-192x192.png" sizes="192x192">
+  <link rel="icon" type="image/png" href="/images/favicons/favicon-16x16.png" sizes="16x16">
+  <link rel="manifest" href="/images/favicons/manifest.json">
+  <link rel="shortcut icon" href="/images/favicons/favicon.ico">
+  <meta name="msapplication-TileColor" content="#ffc40d">
+  <meta name="msapplication-TileImage" content="/images/favicons/mstile-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="https://shanidgafur.github.io//blog/terraform-workspaces-for-multi-region-deployment">
+  <link rel="alternate" type="application/rss+xml" title="about:software" href="/feed.xml">
+</head>
+
+
+  <body>
+    <span class="mobile btn-mobile-menu">
+  <i class="icon icon-list btn-mobile-menu__icon"></i>
+  <i class="icon icon-x-circle btn-mobile-close__icon hidden"></i>
+</span>
+  
+<header class="panel-cover" style="background-image: url(/images/cover.jpg)">
+  <div class="panel-main">
+
+    <div class="panel-main__inner panel-inverted">
+    <div class="panel-main__content">
+        <a href="/" title="link to home of about:software">
+          <img src="/images/profile.jpg" class="user-image" alt="My Profile Photo">
+          <h1 class="panel-cover__title panel-title">about:software</h1>
+        </a>
+        <hr class="panel-cover__divider">
+        <p class="panel-cover__description">This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..</p>
+        <hr class="panel-cover__divider panel-cover__divider--secondary">
+
+        <div class="navigation-wrapper">
+
+          <nav class="cover-navigation cover-navigation--primary">
+            <ul class="navigation">
+              <li class="navigation__item"><a href="/#blog" title="link to about:software blog" class="blog-button">Blog</a></li>
+            </ul>
+          </nav>
+          <nav class="cover-navigation cover-navigation--primary">
+            <ul class="navigation">
+              <li class="navigation__item"><a href="/about" title="link to about:software about" class="blog-button">About</a></li>
+            </ul>
+          </nav>
+          <nav class="cover-navigation navigation--social">
+            <ul class="navigation">
+          
+            
+
+            
+
+            
+              <!-- LinkedIn -->
+              <li class="navigation__item">
+                <a href="https://www.linkedin.com/in/shanidgafur" title="shanidgafur on LinkedIn" target="_blank">
+                  <i class="icon icon-social-linkedin"></i>
+                  <span class="label">LinkedIn</span>
+                </a>
+              </li>
+            
+
+            
+              <!-- GitHub -->
+              <li class="navigation__item">
+                <a href="https://www.github.com/shanidgafur" title="shanidgafur on GitHub" target="_blank">
+                  <i class="icon icon-social-github"></i>
+                  <span class="label">GitHub</span>
+                </a>
+              </li>
+            
+
+            
+
+            <!-- RSS -->
+            <li class="navigation__item">
+              <a href="/feed.xml" title="Subscribe" target="_blank">
+                <i class="icon icon-rss"></i>
+                <span class="label">RSS</span>
+              </a>
+            </li>
+          
+            </ul>
+          </nav>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="panel-cover--overlay"></div>
+  </div>
+</header>
+
+
+    <div class="content-wrapper">
+      <div class="content-wrapper__inner">
+        <article class="post-container post-container--single">
+  <header class="post-header">
+    <div class="post-meta">
+      <time datetime="28 Jul 2018" class="post-meta__date date">28 Jul 2018</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#AWS">AWS</a> <a href="/tags/#Terraform">Terraform</a> </span>
+    </div>
+    <h1 class="post-title">Using Terraform Workspaces for Multi-Region Deployments in AWS</h1>
+  </header>
+
+  <section class="post">
+    <p>This blog post talks about using <a href="https://www.terraform.io/">Terraform</a> workspaces as a mechanism to maintain consistent environments across multiple cloud regions. While the examples in the post are AWS-centric, the concepts highlighted here are really cloud agnostic.</p>
+
+<h3 id="short-intro-to-terraform-state--workspaces">Short intro to Terraform State &amp; Workspaces</h3>
+
+<p>For Terraform to be able to map resources in your config files to resources that have been provisioned in AWS or any other provider, it maintains a sort of lookup table in the form of the “Terraform State”. For example, if you were to have the following in your tf project</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"aws_s3_bucket"</span> <span class="s2">"my-s3-bucket"</span> <span class="p">{</span>
+  <span class="nx">bucket</span> <span class="o">=</span> <span class="s2">"my-s3-bucket"</span>
+  <span class="nx">acl</span>    <span class="o">=</span> <span class="s2">"private"</span>
+
+  <span class="nx">tags</span> <span class="p">{</span>
+    <span class="nx">Name</span>        <span class="o">=</span> <span class="s2">"my-s3-bucket"</span>
+    <span class="nx">Environment</span> <span class="o">=</span> <span class="s2">"dev"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+<p>Terraform will maintain a reference to the ARN of the actual S3 bucket and its other attributes in its state file, like so</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aws_s3_bucket"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"primary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nt">"acceleration_status"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"acl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"private"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"arn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:s3:::my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"bucket"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"cors_rule.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"force_destroy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"logging.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"us-east-1"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"replication_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"server_side_encryption_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"tags.%"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"tags.Environment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"tags.Name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"versioning.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"versioning.0.enabled"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
+          </span><span class="nt">"versioning.0.mfa_delete"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+    </span><span class="nt">"meta"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nt">"tainted"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+  </span><span class="nt">"deposed"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="nt">"provider"</span><span class="p">:</span><span class="w"> </span><span class="s2">"provider.aws.east1"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+</div>
+
+<p>Within a Terraform state, there can only be one resource for a given name. In it’s simplest form, if I wanted to create many instances of resources like S3 buckets, for example, I would define multiple resources in my terraform config - one per resource. This becomes a bit tedious (not to mention a big violation of the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY principle</a>) when all the resources are exactly the same in terms of configuration except for, perhaps, its name. This is especially true for services like AWS API Gateway where Terraform configs requires at least 5-6 resources to be defined for even a simplistic “Hello World” type scenario.</p>
+
+<p>Terraform <a href="https://www.terraform.io/docs/state/workspaces.html">workspaces</a> (previously referred to as Terraform environments), is a way to address this concern with repetitive configurations. It is essentially a mechanism to partition the Terraform state so that many instances to the same resource can exists within it. The most commonly stated use case for this is to define a resource like an ec2 instance or a load balancer once per SDLC environment - in other words, define the resource once but <code class="highlighter-rouge">terraform apply</code> using the same configuration separately for “dev”, “qa”, and “prod” environments. This same capability can also be used to manage multi-region deployments.</p>
+
+<h3 id="the-case-for-multi-region-deployments">The case for multi-region Deployments</h3>
+
+<p>Before we talk about how Terraform workspaces can solve for multi-region deployments, I do want to take a moment to talk about “why” we want to have multi-region deployments. It comes down to</p>
+
+<ul>
+  <li>You have a desire to insulate yourself against the failure of an entire cloud region. While unlikely, we have seen occurrences where an entire AWS cloud region (comprised to multiple availability zones) has had cascading failures bringing down the entire region altogether. Depending upon the business criticality of the services that you are running in the cloud, that may or may not be an acceptable risk.</li>
+  <li>You have a desire to reduce service latency for your customers. This is especially true for global businesses where you’d like to make sure, for example, that your customers in Asia are not forced to go half way across the globe to retrieve an image from an S3 bucket in N. Virginia.</li>
+  <li>You have a desire for complete isolation between regions for the purposes of blue-green type deployments across regions. For example, you would like to limit the availability of a modified API Gateway end point to a single region so as to monitor and isolate failures to that single region.</li>
+</ul>
+
+<h3 id="configuration">Configuration</h3>
+
+<p>Our intent from this point on is to create a single set of terraform configs that we can then apply to multiple regions. To this end, we will define Terraform workspaces that map to individual regions, and refactor our resources (if needed) so that we don’t have namespace collision in AWS.</p>
+
+<p>We’ll start by defining the configuration to reference the workspace name in our provider definition</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
+ <span class="nx">region</span> <span class="o">=</span> <span class="s2">"${terraform.workspace}"</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<p>Note that once this config is added, <code class="highlighter-rouge">terraform init</code> will no longer work in the <code class="highlighter-rouge">default</code> workspace, since (as you may have guessed) there is no <code class="highlighter-rouge">default</code> region for AWS. However, if we were to create a workspace corresponding to a valid AWS region and then <code class="highlighter-rouge">terraform init</code>, that would work</p>
+
+<pre><code class="language-console">    shanid:~/dev$ terraform workspace new us-east-1
+
+    Created and switched to workspace "us-east-1"!
+
+    You are now on a new, empty workspace. Workspaces isolate their state,
+    so if you run "terraform plan" Terraform will not see any existing state
+    for this configuration.
+</code></pre>
+
+<p>Once the workspace is created, we should be able to run <code class="highlighter-rouge">terraform init</code>, <code class="highlighter-rouge">terraform plan</code> and <code class="highlighter-rouge">terraform apply</code> as usual.</p>
+
+<p>Once we have provisioned our resources in this region, create a workspace for a second region and re-run the terraform in that workspace to create the exact same set of AWS resources in that region.</p>
+
+<pre><code class="language-console">    shanid:~/dev$ terraform workspace new us-west-2
+
+    Created and switched to workspace "us-west-2"!
+
+    You are now on a new, empty workspace. Workspaces isolate their state,
+    so if you run "terraform plan" Terraform will not see any existing state
+    for this configuration.
+</code></pre>
+
+<p>The only (minor) gotcha to look out for is with regards to AWS resources that are global or globally named. IAM is an example of a global resource, and S3 is an example of a resource that has a globally scoped name. Consider the following example,</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"aws_iam_role"</span> <span class="s2">"lambda_role"</span> <span class="p">{</span>
+ <span class="nx">name</span>     <span class="o">=</span> <span class="s2">"my_lambda_role"</span>
+ <span class="nx">assume_role_policy</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="nx">EOF</span>
+<span class="p">{</span>
+ <span class="s2">"Version"</span><span class="err">:</span> <span class="s2">"2012-10-17"</span><span class="p">,</span>
+ <span class="s2">"Statement"</span><span class="err">:</span> <span class="p">[</span>
+   <span class="p">{</span>
+     <span class="s2">"Sid"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+     <span class="s2">"Effect"</span><span class="p">:</span> <span class="s2">"Allow"</span><span class="p">,</span>
+     <span class="s2">"Principal"</span><span class="p">:</span> <span class="p">{</span>
+       <span class="s2">"Service"</span><span class="p">:</span> <span class="s2">"lambda.amazonaws.com"</span>
+     <span class="p">},</span>
+     <span class="s2">"Action"</span><span class="err">:</span> <span class="s2">"sts:AssumeRole"</span>
+   <span class="p">}</span>
+ <span class="p">]</span>
+<span class="p">}</span>
+<span class="nx">EOF</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<p>If we were to attempt to create this resource in multiple resources, we’d start running into issues. This would work just fine in the first region, but in subsequent regions, you’d start seeing errors when applying your terraform since the resource <code class="highlighter-rouge">my_lambda_role</code> already exists. The easiest way to solve for this, is to include the region/workspace in the name of the resource being created. For example, the following config will create distinctly named IAM roles</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"aws_iam_role"</span> <span class="s2">"lambda_role"</span> <span class="p">{</span>
+ <span class="nx">name</span>     <span class="o">=</span> <span class="s2">"my_lambda_role_${terraform.workspace}"</span>
+ <span class="nx">assume_role_policy</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="nx">EOF</span>
+<span class="p">{</span>
+ <span class="s2">"Version"</span><span class="err">:</span> <span class="s2">"2012-10-17"</span><span class="p">,</span>
+ <span class="s2">"Statement"</span><span class="err">:</span> <span class="p">[</span>
+   <span class="p">{</span>
+     <span class="s2">"Sid"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
+     <span class="s2">"Effect"</span><span class="p">:</span> <span class="s2">"Allow"</span><span class="p">,</span>
+     <span class="s2">"Principal"</span><span class="p">:</span> <span class="p">{</span>
+       <span class="s2">"Service"</span><span class="p">:</span> <span class="s2">"lambda.amazonaws.com"</span>
+     <span class="p">},</span>
+     <span class="s2">"Action"</span><span class="err">:</span> <span class="s2">"sts:AssumeRole"</span>
+   <span class="p">}</span>
+ <span class="p">]</span>
+<span class="p">}</span>
+<span class="nx">EOF</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<p>This would create a <code class="highlighter-rouge">my_lambda_role_us-east-1</code> role in us-east-1 and a <code class="highlighter-rouge">my_lambda_role_us-west-2</code> role in us-west-2. And we have maintained our objective of a single configuration that can be deployed seamlessly into multiple regions.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>Hopefully this approach makes it easier for you to manage your cross-region deployments much more easily with Terraform. I should acknowledge that using workspaces is probably not the only way to go about solving for this problem, but this is the way that we’ve solved for most of our deployment related challenges with the least possible amount of repetition in our configs.</p>
+
+<p>As always, please feel free to leave a comment if you’re having issues with the sample config or if you’re running into issues that I have not covered in this post.</p>
+
+
+  </section>
+  <section id="disqus_thread"></section><!-- /#disqus_thread -->
+</article>
+
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'shanid'; 
+        var disqus_config = function () {
+          this.page.url = 'https://shanidgafur.github.io/blog/terraform-workspaces-for-multi-region-deployment';
+          this.page.identifier = '/blog/Terraform-Workspaces-For-MultiRegion-Deployment';
+          this.page.title = 'Using Terraform Workspaces for Multi-Region Deployments in AWS';
+        };
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function () {
+            var s = document.createElement('script'); s.async = true;
+            s.type = 'text/javascript';
+            s.src = '//' + disqus_shortname + '.disqus.com/count.js';
+            (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+        }());
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+      </div>
+
+      <footer class="footer">
+  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
+</footer> 
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-597490-5', 'auto');
+  ga('send', 'pageview');
+</script>
+
+    </div>
+  </body>
+</html>

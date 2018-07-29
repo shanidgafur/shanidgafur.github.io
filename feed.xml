@@ -5,9 +5,182 @@
     <description>This blog talks about software and systems integration. No developers were harmed in the creation of this blog.. well, mostly, anyway..</description>
     <link>https://shanidgafur.github.io//</link>
     <atom:link href="https://shanidgafur.github.io//feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 12 Mar 2017 16:20:24 -0400</pubDate>
-    <lastBuildDate>Sun, 12 Mar 2017 16:20:24 -0400</lastBuildDate>
+    <pubDate>Sat, 28 Jul 2018 23:55:04 -0400</pubDate>
+    <lastBuildDate>Sat, 28 Jul 2018 23:55:04 -0400</lastBuildDate>
     <generator>Jekyll v3.1.2</generator>
+    
+      <item>
+        <title>Using Terraform Workspaces for Multi-Region Deployments in AWS</title>
+        <description>&lt;p&gt;This blog post talks about using &lt;a href=&quot;https://www.terraform.io/&quot;&gt;Terraform&lt;/a&gt; workspaces as a mechanism to maintain consistent environments across multiple cloud regions. While the examples in the post are AWS-centric, the concepts highlighted here are really cloud agnostic.&lt;/p&gt;
+
+&lt;h3 id=&quot;short-intro-to-terraform-state--workspaces&quot;&gt;Short intro to Terraform State &amp;amp; Workspaces&lt;/h3&gt;
+
+&lt;p&gt;For Terraform to be able to map resources in your config files to resources that have been provisioned in AWS or any other provider, it maintains a sort of lookup table in the form of the “Terraform State”. For example, if you were to have the following in your tf project&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;resource&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;aws_s3_bucket&quot;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;bucket&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;acl&lt;/span&gt;    &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;private&quot;&lt;/span&gt;
+
+  &lt;span class=&quot;nx&quot;&gt;tags&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Name&lt;/span&gt;        &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;Environment&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;dev&quot;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;Terraform will maintain a reference to the ARN of the actual S3 bucket and its other attributes in its state file, like so&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;aws_s3_bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;primary&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;attributes&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;acceleration_status&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;acl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;private&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;arn&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arn:aws:s3:::my-s3-bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;cors_rule.#&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;force_destroy&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;false&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;logging.#&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;region&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;us-east-1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;replication_configuration.#&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;server_side_encryption_configuration.#&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;tags.%&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;tags.Environment&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dev&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;tags.Name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;my-s3-bucket&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;versioning.#&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;versioning.0.enabled&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;false&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+          &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;versioning.0.mfa_delete&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;false&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;meta&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;tainted&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;deposed&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;provider&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;provider.aws.east1&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Within a Terraform state, there can only be one resource for a given name. In it’s simplest form, if I wanted to create many instances of resources like S3 buckets, for example, I would define multiple resources in my terraform config - one per resource. This becomes a bit tedious (not to mention a big violation of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Don%27t_repeat_yourself&quot;&gt;DRY principle&lt;/a&gt;) when all the resources are exactly the same in terms of configuration except for, perhaps, its name. This is especially true for services like AWS API Gateway where Terraform configs requires at least 5-6 resources to be defined for even a simplistic “Hello World” type scenario.&lt;/p&gt;
+
+&lt;p&gt;Terraform &lt;a href=&quot;https://www.terraform.io/docs/state/workspaces.html&quot;&gt;workspaces&lt;/a&gt; (previously referred to as Terraform environments), is a way to address this concern with repetitive configurations. It is essentially a mechanism to partition the Terraform state so that many instances to the same resource can exists within it. The most commonly stated use case for this is to define a resource like an ec2 instance or a load balancer once per SDLC environment - in other words, define the resource once but &lt;code class=&quot;highlighter-rouge&quot;&gt;terraform apply&lt;/code&gt; using the same configuration separately for “dev”, “qa”, and “prod” environments. This same capability can also be used to manage multi-region deployments.&lt;/p&gt;
+
+&lt;h3 id=&quot;the-case-for-multi-region-deployments&quot;&gt;The case for multi-region Deployments&lt;/h3&gt;
+
+&lt;p&gt;Before we talk about how Terraform workspaces can solve for multi-region deployments, I do want to take a moment to talk about “why” we want to have multi-region deployments. It comes down to&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;You have a desire to insulate yourself against the failure of an entire cloud region. While unlikely, we have seen occurrences where an entire AWS cloud region (comprised to multiple availability zones) has had cascading failures bringing down the entire region altogether. Depending upon the business criticality of the services that you are running in the cloud, that may or may not be an acceptable risk.&lt;/li&gt;
+  &lt;li&gt;You have a desire to reduce service latency for your customers. This is especially true for global businesses where you’d like to make sure, for example, that your customers in Asia are not forced to go half way across the globe to retrieve an image from an S3 bucket in N. Virginia.&lt;/li&gt;
+  &lt;li&gt;You have a desire for complete isolation between regions for the purposes of blue-green type deployments across regions. For example, you would like to limit the availability of a modified API Gateway end point to a single region so as to monitor and isolate failures to that single region.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;configuration&quot;&gt;Configuration&lt;/h3&gt;
+
+&lt;p&gt;Our intent from this point on is to create a single set of terraform configs that we can then apply to multiple regions. To this end, we will define Terraform workspaces that map to individual regions, and refactor our resources (if needed) so that we don’t have namespace collision in AWS.&lt;/p&gt;
+
+&lt;p&gt;We’ll start by defining the configuration to reference the workspace name in our provider definition&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;provider&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;aws&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+ &lt;span class=&quot;nx&quot;&gt;region&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;${terraform.workspace}&quot;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Note that once this config is added, &lt;code class=&quot;highlighter-rouge&quot;&gt;terraform init&lt;/code&gt; will no longer work in the &lt;code class=&quot;highlighter-rouge&quot;&gt;default&lt;/code&gt; workspace, since (as you may have guessed) there is no &lt;code class=&quot;highlighter-rouge&quot;&gt;default&lt;/code&gt; region for AWS. However, if we were to create a workspace corresponding to a valid AWS region and then &lt;code class=&quot;highlighter-rouge&quot;&gt;terraform init&lt;/code&gt;, that would work&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-console&quot;&gt;    shanid:~/dev$ terraform workspace new us-east-1
+
+    Created and switched to workspace &quot;us-east-1&quot;!
+
+    You are now on a new, empty workspace. Workspaces isolate their state,
+    so if you run &quot;terraform plan&quot; Terraform will not see any existing state
+    for this configuration.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Once the workspace is created, we should be able to run &lt;code class=&quot;highlighter-rouge&quot;&gt;terraform init&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;terraform plan&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;terraform apply&lt;/code&gt; as usual.&lt;/p&gt;
+
+&lt;p&gt;Once we have provisioned our resources in this region, create a workspace for a second region and re-run the terraform in that workspace to create the exact same set of AWS resources in that region.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-console&quot;&gt;    shanid:~/dev$ terraform workspace new us-west-2
+
+    Created and switched to workspace &quot;us-west-2&quot;!
+
+    You are now on a new, empty workspace. Workspaces isolate their state,
+    so if you run &quot;terraform plan&quot; Terraform will not see any existing state
+    for this configuration.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The only (minor) gotcha to look out for is with regards to AWS resources that are global or globally named. IAM is an example of a global resource, and S3 is an example of a resource that has a globally scoped name. Consider the following example,&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;resource&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;aws_iam_role&quot;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;lambda_role&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+ &lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt;     &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;my_lambda_role&quot;&lt;/span&gt;
+ &lt;span class=&quot;nx&quot;&gt;assume_role_policy&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;EOF&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+ &lt;span class=&quot;s2&quot;&gt;&quot;Version&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;2012-10-17&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+ &lt;span class=&quot;s2&quot;&gt;&quot;Statement&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Sid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Effect&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Allow&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Principal&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+       &lt;span class=&quot;s2&quot;&gt;&quot;Service&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;lambda.amazonaws.com&quot;&lt;/span&gt;
+     &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Action&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sts:AssumeRole&quot;&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+ &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;EOF&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;If we were to attempt to create this resource in multiple resources, we’d start running into issues. This would work just fine in the first region, but in subsequent regions, you’d start seeing errors when applying your terraform since the resource &lt;code class=&quot;highlighter-rouge&quot;&gt;my_lambda_role&lt;/code&gt; already exists. The easiest way to solve for this, is to include the region/workspace in the name of the resource being created. For example, the following config will create distinctly named IAM roles&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;resource&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;aws_iam_role&quot;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;lambda_role&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+ &lt;span class=&quot;nx&quot;&gt;name&lt;/span&gt;     &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;my_lambda_role_${terraform.workspace}&quot;&lt;/span&gt;
+ &lt;span class=&quot;nx&quot;&gt;assume_role_policy&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;EOF&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+ &lt;span class=&quot;s2&quot;&gt;&quot;Version&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;2012-10-17&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+ &lt;span class=&quot;s2&quot;&gt;&quot;Statement&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Sid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Effect&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Allow&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Principal&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+       &lt;span class=&quot;s2&quot;&gt;&quot;Service&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;lambda.amazonaws.com&quot;&lt;/span&gt;
+     &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+     &lt;span class=&quot;s2&quot;&gt;&quot;Action&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sts:AssumeRole&quot;&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+ &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;EOF&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This would create a &lt;code class=&quot;highlighter-rouge&quot;&gt;my_lambda_role_us-east-1&lt;/code&gt; role in us-east-1 and a &lt;code class=&quot;highlighter-rouge&quot;&gt;my_lambda_role_us-west-2&lt;/code&gt; role in us-west-2. And we have maintained our objective of a single configuration that can be deployed seamlessly into multiple regions.&lt;/p&gt;
+
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;
+
+&lt;p&gt;Hopefully this approach makes it easier for you to manage your cross-region deployments much more easily with Terraform. I should acknowledge that using workspaces is probably not the only way to go about solving for this problem, but this is the way that we’ve solved for most of our deployment related challenges with the least possible amount of repetition in our configs.&lt;/p&gt;
+
+&lt;p&gt;As always, please feel free to leave a comment if you’re having issues with the sample config or if you’re running into issues that I have not covered in this post.&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 28 Jul 2018 00:00:00 -0400</pubDate>
+        <link>https://shanidgafur.github.io//blog/terraform-workspaces-for-multi-region-deployment</link>
+        <guid isPermaLink="true">https://shanidgafur.github.io//blog/terraform-workspaces-for-multi-region-deployment</guid>
+        
+        <category>AWS</category>
+        
+        <category>Terraform</category>
+        
+        
+        <category>AWS</category>
+        
+        <category>Terraform</category>
+        
+      </item>
     
       <item>
         <title>Akamai log ingest and analysis with AWS</title>
@@ -116,6 +289,8 @@ Although, they’re both branded “Kinesis” by AWS, the function of Kinesis F
         
         <category>Lambda</category>
         
+        <category>Integration</category>
+        
         
         <category>Akamai</category>
         
@@ -124,6 +299,8 @@ Although, they’re both branded “Kinesis” by AWS, the function of Kinesis F
         <category>Kinesis</category>
         
         <category>Lambda</category>
+        
+        <category>Integration</category>
         
       </item>
     
@@ -487,13 +664,13 @@ Although, they’re both branded “Kinesis” by AWS, the function of Kinesis F
 
 &lt;p&gt;Right off the bat, you can run this sample site to see what the blog looks like by running the following comand&lt;/p&gt;
 
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll -serve&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll serve&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;This will start off a running instance of the generated html for the site, and you will be able to see this at &lt;a href=&quot;http://localhost:4000/&quot;&gt;http://localhost:4000/&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;To see draft posts&lt;/p&gt;
 
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll -serve --drafts&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll serve --drafts&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;At a high level, the &lt;code class=&quot;highlighter-rouge&quot;&gt;_layouts&lt;/code&gt; folder contains (as expected) the overall layouts of the site. The layouts themselves are mostly html with a bit of &lt;a href=&quot;https://github.com/Shopify/liquid/wiki/Liquid-for-Designers#standard-filters&quot;&gt;liquid&lt;/a&gt; tags mixed in. Layouts themselves mostly serve as placeholders for html includes that exist in the &lt;code class=&quot;highlighter-rouge&quot;&gt;_includes&lt;/code&gt; folder. With these two building blocks in place, changing the look and feel of the site boils down to one of two things&lt;/p&gt;
 
@@ -515,7 +692,7 @@ tags: [jekyll,blogging,github pages, discus]
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;You can create pages in the &lt;code class=&quot;highlighter-rouge&quot;&gt;_drafts&lt;/code&gt; folder and review the page using the &lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll -serve --drafts&lt;/code&gt; command mentioned above.&lt;/p&gt;
+&lt;p&gt;You can create pages in the &lt;code class=&quot;highlighter-rouge&quot;&gt;_drafts&lt;/code&gt; folder and review the page using the &lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll serve --drafts&lt;/code&gt; command mentioned above.&lt;/p&gt;
 
 &lt;p&gt;Once you’re good with the way the page looks, you can copy the draft  to the &lt;code class=&quot;highlighter-rouge&quot;&gt;_posts&lt;/code&gt; folder. Remember that posts need to use the following naming convention &lt;code class=&quot;highlighter-rouge&quot;&gt;YEAR-MONTH-DAY-title.MARKUP&lt;/code&gt;&lt;/p&gt;
 
@@ -523,7 +700,7 @@ tags: [jekyll,blogging,github pages, discus]
 
 &lt;p&gt;All you really need to do is use the following command&lt;/p&gt;
 
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll -build --destination &amp;lt;destination&amp;gt;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll build --destination &amp;lt;destination&amp;gt;&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;Check the output of the build to the repo for github page, and voila you’re done!&lt;/p&gt;
 

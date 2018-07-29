@@ -205,13 +205,13 @@
 
 <p>Right off the bat, you can run this sample site to see what the blog looks like by running the following comand</p>
 
-<p><code class="highlighter-rouge">jekyll -serve</code></p>
+<p><code class="highlighter-rouge">jekyll serve</code></p>
 
 <p>This will start off a running instance of the generated html for the site, and you will be able to see this at <a href="http://localhost:4000/">http://localhost:4000/</a></p>
 
 <p>To see draft posts</p>
 
-<p><code class="highlighter-rouge">jekyll -serve --drafts</code></p>
+<p><code class="highlighter-rouge">jekyll serve --drafts</code></p>
 
 <p>At a high level, the <code class="highlighter-rouge">_layouts</code> folder contains (as expected) the overall layouts of the site. The layouts themselves are mostly html with a bit of <a href="https://github.com/Shopify/liquid/wiki/Liquid-for-Designers#standard-filters">liquid</a> tags mixed in. Layouts themselves mostly serve as placeholders for html includes that exist in the <code class="highlighter-rouge">_includes</code> folder. With these two building blocks in place, changing the look and feel of the site boils down to one of two things</p>
 
@@ -233,7 +233,7 @@ tags: [jekyll,blogging,github pages, discus]
 </code></pre>
 </div>
 
-<p>You can create pages in the <code class="highlighter-rouge">_drafts</code> folder and review the page using the <code class="highlighter-rouge">jekyll -serve --drafts</code> command mentioned above.</p>
+<p>You can create pages in the <code class="highlighter-rouge">_drafts</code> folder and review the page using the <code class="highlighter-rouge">jekyll serve --drafts</code> command mentioned above.</p>
 
 <p>Once you’re good with the way the page looks, you can copy the draft  to the <code class="highlighter-rouge">_posts</code> folder. Remember that posts need to use the following naming convention <code class="highlighter-rouge">YEAR-MONTH-DAY-title.MARKUP</code></p>
 
@@ -241,7 +241,7 @@ tags: [jekyll,blogging,github pages, discus]
 
 <p>All you really need to do is use the following command</p>
 
-<p><code class="highlighter-rouge">jekyll -build --destination &lt;destination&gt;</code></p>
+<p><code class="highlighter-rouge">jekyll build --destination &lt;destination&gt;</code></p>
 
 <p>Check the output of the build to the repo for github page, and voila you’re done!</p>
 
@@ -284,7 +284,7 @@ tags: [jekyll,blogging,github pages, discus]
       </div>
 
       <footer class="footer">
-  <span class="footer__copyright">&copy; 2017 Shanid Gafur. All rights reserved.</span>
+  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
 </footer> 
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
