@@ -155,25 +155,25 @@
 <p>The first step towards getting the serialization to work is to define the schema for the objects that I would like to serialize. In my hypothetical example, I’d like to define a schema for capturing Errors as they occur in a web application and serializing those to a Kafka based system. (We’ll focus on the Avro part for now, and leave the Kafka bits for later).</p>
 
 <figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
-  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Error"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error record for my application"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Error"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error record for my application"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
     </span><span class="p">{</span><span class="w">
-      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"System-generated numeric ID"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"System-generated numeric ID"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
     </span><span class="p">},</span><span class="w">
     </span><span class="p">{</span><span class="w">
-      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"appname"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"appname"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
     </span><span class="p">},</span><span class="w">
 	</span><span class="p">{</span><span class="w">
-      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"details"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Details of the error"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error.ErrorDetails"</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"details"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Details of the error"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error.ErrorDetails"</span><span class="w">
     </span><span class="p">}</span><span class="w">
   </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span></code></pre></figure>
@@ -181,81 +181,81 @@
 <p>As you can see, I have three fields in my record - an id, the name of the application that generated the error and a complex type called details.  The description for my complex type looks like this.</p>
 
 <figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
-  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ErrorDetails"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error details record"</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ErrorDetails"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error details record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
     </span><span class="p">{</span><span class="w">
-      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"category"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Category of the error. Eg: DatabaseConnectionError"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"category"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Category of the error. Eg: DatabaseConnectionError"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
     </span><span class="p">},</span><span class="w">
     </span><span class="p">{</span><span class="w">
-      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"severity"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The severity of the error. Eg: CRITICAL, FATAL, WARNING"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"severity"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The severity of the error. Eg: CRITICAL, FATAL, WARNING"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
     </span><span class="p">},</span><span class="w">
 	</span><span class="p">{</span><span class="w">
-      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Timestamp (UNIX epoch) of error"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"long"</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Timestamp (UNIX epoch) of error"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"long"</span><span class="w">
     </span><span class="p">}</span><span class="w">
   </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span></code></pre></figure>
 
-<p>The next step would be to generate the C# code using these schemas. This, unfortunately, is where we enter into completely undocumented feature space. Assuming you’ve added the  <a href="https://www.nuget.org/packages/Apache.Avro.Tools/">Avro Tools</a> package to your solution, the codegen utility (codegen.exe) will exist inside the <code class="highlighter-rouge">packages\Apache.Avro.Tools.1.7.7.4\lib</code> folder. I tried a number of different ways to get the code generation to work across multiple schema files, but did not have a whole lot of success getting the utility to work.</p>
+<p>The next step would be to generate the C# code using these schemas. This, unfortunately, is where we enter into completely undocumented feature space. Assuming you’ve added the  <a href="https://www.nuget.org/packages/Apache.Avro.Tools/">Avro Tools</a> package to your solution, the codegen utility (codegen.exe) will exist inside the <code class="language-plaintext highlighter-rouge">packages\Apache.Avro.Tools.1.7.7.4\lib</code> folder. I tried a number of different ways to get the code generation to work across multiple schema files, but did not have a whole lot of success getting the utility to work.</p>
 
 <p>In the end, I had to copy avrogen.exe, Avro.dll (from the Avro package lib directory) and Newtonsoft.Json.dll into a folder along with the avsc file to get this to work. Additionally, I have to merge the two schema types into a single file. A bit of cop out, I’ll admit, and one of these days I plan to get back to figuring out if there is a better way to do this.</p>
 
 <p>In the end, this is what my merged schema file looked like</p>
 
 <figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
-	</span><span class="nt">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur"</span><span class="p">,</span><span class="w">
-	</span><span class="nt">"type"</span><span class="p">:[</span><span class="w">
+	</span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur"</span><span class="p">,</span><span class="w">
+	</span><span class="nl">"type"</span><span class="p">:[</span><span class="w">
 		</span><span class="p">{</span><span class="w">
-		  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ErrorDetails"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error details record"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+		  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ErrorDetails"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error details record"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
 			</span><span class="p">{</span><span class="w">
-			  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"category"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Category of the error. Eg: DatabaseConnectionError"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"category"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Category of the error. Eg: DatabaseConnectionError"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
 			</span><span class="p">},</span><span class="w">
 			</span><span class="p">{</span><span class="w">
-			  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"severity"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The severity of the error. Eg: FATAL, WARNING"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"severity"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The severity of the error. Eg: FATAL, WARNING"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
 			</span><span class="p">},</span><span class="w">
 			</span><span class="p">{</span><span class="w">
-			  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Timestamp (UNIX epoch) of error"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"long"</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Timestamp (UNIX epoch) of error"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"long"</span><span class="w">
 			</span><span class="p">}</span><span class="w">
 		  </span><span class="p">]</span><span class="w">
 		</span><span class="p">},</span><span class="w">
 		</span><span class="p">{</span><span class="w">
-		  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Error"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error record for my application"</span><span class="p">,</span><span class="w">
-		  </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+		  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Error"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error record for my application"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
 			</span><span class="p">{</span><span class="w">
-			  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"System-generated numeric ID"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"System-generated numeric ID"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
 			</span><span class="p">},</span><span class="w">
 			</span><span class="p">{</span><span class="w">
-			  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"appname"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"appname"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
 			</span><span class="p">},</span><span class="w">
 			</span><span class="p">{</span><span class="w">
-			  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"details"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
-			  </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error.ErrorDetails"</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"details"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error.ErrorDetails"</span><span class="w">
 			</span><span class="p">}</span><span class="w">
 		  </span><span class="p">]</span><span class="w">
 		</span><span class="p">}</span><span class="w">
@@ -264,7 +264,7 @@
 
 <p>Once I had all this squared away, the actual code generation part came down to a single command</p>
 
-<p><code class="highlighter-rouge">avrogen.exe -s Error-Merged.avsc .</code></p>
+<p><code class="language-plaintext highlighter-rouge">avrogen.exe -s Error-Merged.avsc .</code></p>
 
 <p>This generates two .cs files that I then just pulled into my solution.</p>
 
@@ -273,12 +273,14 @@
 <p>This was another area where there really wasn’t a whole lot of good sample code to explain the use of the library. Ended up looking at usage of the Java library to figure this out.</p>
 
 <figure class="highlight"><pre><code class="language-c#" data-lang="c#"><span class="c1">//Calculate Epoch Timestamp
-</span><span class="n">DateTime</span> <span class="n">EpochBeginDate</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">DateTime</span><span class="p">(</span><span class="m">1970</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
+</span>
+<span class="n">DateTime</span> <span class="n">EpochBeginDate</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">DateTime</span><span class="p">(</span><span class="m">1970</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
 <span class="kt">long</span> <span class="n">CurrentTimestamp</span> <span class="p">=</span>
 	<span class="p">(</span><span class="kt">long</span><span class="p">)(</span><span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="nf">ToUniversalTime</span><span class="p">()</span> <span class="p">-</span> <span class="n">EpochBeginDate</span><span class="p">.</span><span class="nf">ToUniversalTime</span><span class="p">()).</span><span class="n">TotalSeconds</span><span class="p">;</span>
 
 <span class="c1">//Populate the code generated Avro POCOs with data to be serialized
-</span><span class="n">ErrorDetails</span> <span class="n">details</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ErrorDetails</span>
+</span>
+<span class="n">ErrorDetails</span> <span class="n">details</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ErrorDetails</span>
 <span class="p">{</span>
 	<span class="n">Category</span> <span class="p">=</span> <span class="s">"DBConnectivity"</span><span class="p">,</span>
 	<span class="n">Severity</span> <span class="p">=</span> <span class="s">"FATAL"</span><span class="p">,</span>
@@ -292,14 +294,16 @@
 <span class="p">};</span>
 
 <span class="c1">//Setup File Stream for serialization
-</span><span class="kt">string</span> <span class="n">filelocation</span> <span class="p">=</span> <span class="s">@"c:\temp\avro.bin"</span><span class="p">;</span>
-<span class="n">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">FileStream</span><span class="p">(</span><span class="n">filelocation</span><span class="p">,</span> 
+</span>
+<span class="kt">string</span> <span class="n">filelocation</span> <span class="p">=</span> <span class="s">@"c:\temp\avro.bin"</span><span class="p">;</span>
+<span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">FileStream</span><span class="p">(</span><span class="n">filelocation</span><span class="p">,</span> 
 				<span class="n">FileMode</span><span class="p">.</span><span class="n">OpenOrCreate</span><span class="p">,</span> 
 				<span class="n">FileAccess</span><span class="p">.</span><span class="n">ReadWrite</span><span class="p">,</span> 
 				<span class="n">FileShare</span><span class="p">.</span><span class="n">Write</span><span class="p">);</span>
 
 <span class="c1">//Endode the stream and write to file system
-</span><span class="n">Avro</span><span class="p">.</span><span class="n">IO</span><span class="p">.</span><span class="n">Encoder</span> <span class="n">encoder</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">BinaryEncoder</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span>
+<span class="n">Avro</span><span class="p">.</span><span class="n">IO</span><span class="p">.</span><span class="n">Encoder</span> <span class="n">encoder</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">BinaryEncoder</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
 <span class="n">SpecificDefaultWriter</span> <span class="n">writer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Avro</span><span class="p">.</span><span class="n">Specific</span><span class="p">.</span><span class="nf">SpecificDefaultWriter</span><span class="p">(</span><span class="n">apperror</span><span class="p">.</span><span class="n">Schema</span><span class="p">);</span>
 <span class="n">writer</span><span class="p">.</span><span class="n">Write</span><span class="p">&lt;</span><span class="n">Error</span><span class="p">&gt;(</span><span class="n">apperror</span><span class="p">,</span> <span class="n">encoder</span><span class="p">);</span>
 
@@ -348,7 +352,7 @@
       </div>
 
       <footer class="footer">
-  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
+  <span class="footer__copyright">&copy; 2024 Shanid Gafur. All rights reserved.</span>
 </footer> 
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>

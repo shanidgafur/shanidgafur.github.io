@@ -179,26 +179,29 @@
 <p>Picking up where I left off the Avro serialization example, here’s some sample code that takes the data and pushes that over to a Kafka topic</p>
 
 <figure class="highlight"><pre><code class="language-c#" data-lang="c#"><span class="c1">//Connect to Kafka instance
-</span><span class="n">var</span> <span class="n">brokerConfig</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">BrokerConfiguration</span><span class="p">()</span>
+</span>
+<span class="kt">var</span> <span class="n">brokerConfig</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">BrokerConfiguration</span><span class="p">()</span>
 <span class="p">{</span>
 	<span class="n">BrokerId</span> <span class="p">=</span> <span class="m">0</span><span class="p">,</span>
 	<span class="n">Host</span> <span class="p">=</span> <span class="s">"kafka-dev-instance"</span><span class="p">,</span>
 	<span class="n">Port</span> <span class="p">=</span> <span class="m">9092</span>
 <span class="p">}</span>
-<span class="n">var</span> <span class="n">config</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">ProducerConfiguration</span><span class="p">(</span><span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">BrokerConfiguration</span><span class="p">&gt;</span> <span class="p">{</span> <span class="n">brokerConfig</span> <span class="p">});</span>
+<span class="kt">var</span> <span class="n">config</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">ProducerConfiguration</span><span class="p">(</span><span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">BrokerConfiguration</span><span class="p">&gt;</span> <span class="p">{</span> <span class="n">brokerConfig</span> <span class="p">});</span>
 
 <span class="c1">//Create Avro serialized stream 
-</span><span class="n">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MemoryStream</span><span class="p">();</span>
+</span>
+<span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MemoryStream</span><span class="p">();</span>
 <span class="n">Encoder</span> <span class="n">encoder</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Avro</span><span class="p">.</span><span class="n">IO</span><span class="p">.</span><span class="nf">BinaryEncoder</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
-<span class="n">var</span> <span class="n">writer</span> <span class="p">=</span> 
+<span class="kt">var</span> <span class="n">writer</span> <span class="p">=</span> 
 	<span class="k">new</span> <span class="n">Avro</span><span class="p">.</span><span class="n">Specific</span><span class="p">.</span><span class="n">SpecificWriter</span><span class="p">&lt;</span><span class="n">Error</span><span class="p">&gt;(</span><span class="k">new</span> <span class="nf">SpecificDefaultWriter</span><span class="p">(</span><span class="n">error</span><span class="p">.</span><span class="n">Schema</span><span class="p">));</span>
 <span class="n">writer</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">encoder</span><span class="p">);</span> 
 
 <span class="c1">//Publish to Kafka
-</span><span class="n">var</span> <span class="n">msg</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="nf">Message</span><span class="p">(</span><span class="n">stream</span><span class="p">.</span><span class="nf">ToArray</span><span class="p">());</span>
-<span class="n">var</span> <span class="n">producerData</span> <span class="p">=</span> 
+</span>
+<span class="kt">var</span> <span class="n">msg</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="nf">Message</span><span class="p">(</span><span class="n">stream</span><span class="p">.</span><span class="nf">ToArray</span><span class="p">());</span>
+<span class="kt">var</span> <span class="n">producerData</span> <span class="p">=</span> 
 	<span class="k">new</span> <span class="n">ProducerData</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="n">Message</span><span class="p">&gt;(</span><span class="s">"kafka-topicname"</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">.</span><span class="k">value</span><span class="p">.</span><span class="nf">ToString</span><span class="p">(),</span> <span class="n">msg</span><span class="p">);</span>
-<span class="k">using</span> <span class="p">(</span><span class="n">var</span> <span class="n">producer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Producer</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="n">Message</span><span class="p">&gt;(</span><span class="n">config</span><span class="p">))</span>
+<span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">producer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Producer</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="n">Message</span><span class="p">&gt;(</span><span class="n">config</span><span class="p">))</span>
 <span class="p">{</span>
 	<span class="n">producer</span><span class="p">.</span><span class="nf">Send</span><span class="p">(</span><span class="n">producerData</span><span class="p">);</span>
 <span class="p">}</span> </code></pre></figure>
@@ -242,7 +245,7 @@
       </div>
 
       <footer class="footer">
-  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
+  <span class="footer__copyright">&copy; 2024 Shanid Gafur. All rights reserved.</span>
 </footer> 
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>

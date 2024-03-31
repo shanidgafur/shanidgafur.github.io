@@ -159,35 +159,32 @@
   <li>(If you don’t already have this..) Install <a href="https://chocolatey.org/">chocolatey</a>. In a powershell window, run the following command</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>PS:\&gt;iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-</code></pre>
-</div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS:\&gt;iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+</code></pre></div></div>
 
 <ul>
   <li>Install ruby</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>choco install ruby -y
-</code></pre>
-</div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>choco install ruby -y
+</code></pre></div></div>
 
 <ul>
   <li>Install jekyll</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>gem install jekyll
-</code></pre>
-</div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gem install jekyll
+</code></pre></div></div>
 
 <h4 id="setup-your-blog">Setup your blog</h4>
 
 <p>The setup and customization of your blog is where you will really start to get to know jekyll. Start off first by creating you new blog</p>
 
-<p><code class="highlighter-rouge">jekyll new myblog</code></p>
+<p><code class="language-plaintext highlighter-rouge">jekyll new myblog</code></p>
 
 <p>What this will do will create a folder structure similar to the below</p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">.
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">.</span>
 ├── _config.yml
 ├── _drafts
 |   └── this-is-a-draft.markdown
@@ -205,15 +202,15 @@
 
 <p>Right off the bat, you can run this sample site to see what the blog looks like by running the following comand</p>
 
-<p><code class="highlighter-rouge">jekyll serve</code></p>
+<p><code class="language-plaintext highlighter-rouge">jekyll serve</code></p>
 
 <p>This will start off a running instance of the generated html for the site, and you will be able to see this at <a href="http://localhost:4000/">http://localhost:4000/</a></p>
 
 <p>To see draft posts</p>
 
-<p><code class="highlighter-rouge">jekyll serve --drafts</code></p>
+<p><code class="language-plaintext highlighter-rouge">jekyll serve --drafts</code></p>
 
-<p>At a high level, the <code class="highlighter-rouge">_layouts</code> folder contains (as expected) the overall layouts of the site. The layouts themselves are mostly html with a bit of <a href="https://github.com/Shopify/liquid/wiki/Liquid-for-Designers#standard-filters">liquid</a> tags mixed in. Layouts themselves mostly serve as placeholders for html includes that exist in the <code class="highlighter-rouge">_includes</code> folder. With these two building blocks in place, changing the look and feel of the site boils down to one of two things</p>
+<p>At a high level, the <code class="language-plaintext highlighter-rouge">_layouts</code> folder contains (as expected) the overall layouts of the site. The layouts themselves are mostly html with a bit of <a href="https://github.com/Shopify/liquid/wiki/Liquid-for-Designers#standard-filters">liquid</a> tags mixed in. Layouts themselves mostly serve as placeholders for html includes that exist in the <code class="language-plaintext highlighter-rouge">_includes</code> folder. With these two building blocks in place, changing the look and feel of the site boils down to one of two things</p>
 
 <ul>
   <li>To change the overall organization of the page, tweak the layout.</li>
@@ -224,24 +221,23 @@
 
 <p>Blog posts and pages in general can be created using markdown or html. The only thing the page really needs is the <a href="https://jekyllrb.com/docs/frontmatter/">Front Matter</a> block that specifies some attributes of the page like the layout to be used, tags on the page etc. For example, here’s the Front Matter block for this page.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>---
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>---
 layout: post
 title: "Setting up this blog"
 summary: This post talks about the process followed to setup a blog on github pages using jekyll
 tags: [jekyll,blogging,github pages, discus]
 ---
-</code></pre>
-</div>
+</code></pre></div></div>
 
-<p>You can create pages in the <code class="highlighter-rouge">_drafts</code> folder and review the page using the <code class="highlighter-rouge">jekyll serve --drafts</code> command mentioned above.</p>
+<p>You can create pages in the <code class="language-plaintext highlighter-rouge">_drafts</code> folder and review the page using the <code class="language-plaintext highlighter-rouge">jekyll serve --drafts</code> command mentioned above.</p>
 
-<p>Once you’re good with the way the page looks, you can copy the draft  to the <code class="highlighter-rouge">_posts</code> folder. Remember that posts need to use the following naming convention <code class="highlighter-rouge">YEAR-MONTH-DAY-title.MARKUP</code></p>
+<p>Once you’re good with the way the page looks, you can copy the draft  to the <code class="language-plaintext highlighter-rouge">_posts</code> folder. Remember that posts need to use the following naming convention <code class="language-plaintext highlighter-rouge">YEAR-MONTH-DAY-title.MARKUP</code></p>
 
 <h4 id="publishing">Publishing</h4>
 
 <p>All you really need to do is use the following command</p>
 
-<p><code class="highlighter-rouge">jekyll build --destination &lt;destination&gt;</code></p>
+<p><code class="language-plaintext highlighter-rouge">jekyll build --destination &lt;destination&gt;</code></p>
 
 <p>Check the output of the build to the repo for github page, and voila you’re done!</p>
 
@@ -284,7 +280,7 @@ tags: [jekyll,blogging,github pages, discus]
       </div>
 
       <footer class="footer">
-  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
+  <span class="footer__copyright">&copy; 2024 Shanid Gafur. All rights reserved.</span>
 </footer> 
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>

@@ -141,6 +141,154 @@
         <h2 class="post-list__post-title post-title"><a href="/blog/terraform-workspaces-for-multi-region-deployment" title="Using Terraform Workspaces for Multi-Region Deployments in AWS">Using Terraform Workspaces for Multi-Region Deployments in AWS</a></h2>
         <p class="excerpt">This blog post talks about using <a href="https://www.terraform.io/">Terraform</a> workspaces as a mechanism to maintain consistent environments across multiple cloud regions. While the examples in the post are AWS-centric, the concepts highlighted here are really cloud agnostic.
 
+<h3 id="short-intro-to-terraform-state--workspaces">Short intro to Terraform State &amp; Workspaces</h3>
+
+For Terraform to be able to map resources in your config files to resources that have been provisioned in AWS or any other provider, it maintains a sort of lookup table in the form of the “Terraform State”. For example, if you were to have the following in your tf project
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="dl">"</span><span class="s2">aws_s3_bucket</span><span class="dl">"</span> <span class="dl">"</span><span class="s2">my-s3-bucket</span><span class="dl">"</span> <span class="p">{</span>
+  <span class="nx">bucket</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">my-s3-bucket</span><span class="dl">"</span>
+  <span class="nx">acl</span>    <span class="o">=</span> <span class="dl">"</span><span class="s2">private</span><span class="dl">"</span>
+
+  <span class="nx">tags</span> <span class="p">{</span>
+    <span class="nx">Name</span>        <span class="o">=</span> <span class="dl">"</span><span class="s2">my-s3-bucket</span><span class="dl">"</span>
+    <span class="nx">Environment</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">dev</span><span class="dl">"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+Terraform will maintain a reference to the ARN of the actual S3 bucket and its other attributes in its state file, like so
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aws_s3_bucket"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"primary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"acceleration_status"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"acl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"private"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"arn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:s3:::my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"bucket"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"cors_rule.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"force_destroy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"logging.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"us-east-1"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"replication_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"server_side_encryption_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"tags.%"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"tags.Environment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"tags.Name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"versioning.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"versioning.0.enabled"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"versioning.0.mfa_delete"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"meta"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"tainted"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"deposed"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="nl">"provider"</span><span class="p">:</span><span class="w"> </span><span class="s2">"provider.aws.east1"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+Within a Terraform state, there can only be one resource for a given name. In it’s simplest form, if I wanted to create many instances of resources like S3 buckets, for example, I would define multiple resources in my terraform config - one per resource. This becomes a bit tedious (not to mention a big violation of the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY principle</a>) when all the resources are exactly the same in terms of configuration except for, perhaps, its name. This is especially true for services like AWS API Gateway where Terraform configs requires at least 5-6 resources to be defined for even a simplistic “Hello World” type scenario.
+
+Terraform <a href="https://www.terraform.io/docs/state/workspaces.html">workspaces</a> (previously referred to as Terraform environments), is a way to address this concern with repetitive configurations. It is essentially a mechanism to partition the Terraform state so that many instances to the same resource can exists within it. The most commonly stated use case for this is to define a resource like an ec2 instance or a load balancer once per SDLC environment - in other words, define the resource once but <code class="language-plaintext highlighter-rouge">terraform apply</code> using the same configuration separately for “dev”, “qa”, and “prod” environments. This same capability can also be used to manage multi-region deployments.
+
+<h3 id="the-case-for-multi-region-deployments">The case for multi-region Deployments</h3>
+
+Before we talk about how Terraform workspaces can solve for multi-region deployments, I do want to take a moment to talk about “why” we want to have multi-region deployments. It comes down to
+
+<ul>
+  <li>You have a desire to insulate yourself against the failure of an entire cloud region. While unlikely, we have seen occurrences where an entire AWS cloud region (comprised to multiple availability zones) has had cascading failures bringing down the entire region altogether. Depending upon the business criticality of the services that you are running in the cloud, that may or may not be an acceptable risk.</li>
+  <li>You have a desire to reduce service latency for your customers. This is especially true for global businesses where you’d like to make sure, for example, that your customers in Asia are not forced to go half way across the globe to retrieve an image from an S3 bucket in N. Virginia.</li>
+  <li>You have a desire for complete isolation between regions for the purposes of blue-green type deployments across regions. For example, you would like to limit the availability of a modified API Gateway end point to a single region so as to monitor and isolate failures to that single region.</li>
+</ul>
+
+<h3 id="configuration">Configuration</h3>
+
+Our intent from this point on is to create a single set of terraform configs that we can then apply to multiple regions. To this end, we will define Terraform workspaces that map to individual regions, and refactor our resources (if needed) so that we don’t have namespace collision in AWS.
+
+We’ll start by defining the configuration to reference the workspace name in our provider definition
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">provider</span> <span class="dl">"</span><span class="s2">aws</span><span class="dl">"</span> <span class="p">{</span>
+ <span class="nx">region</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">${terraform.workspace}</span><span class="dl">"</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+Note that once this config is added, <code class="language-plaintext highlighter-rouge">terraform init</code> will no longer work in the <code class="language-plaintext highlighter-rouge">default</code> workspace, since (as you may have guessed) there is no <code class="language-plaintext highlighter-rouge">default</code> region for AWS. However, if we were to create a workspace corresponding to a valid AWS region and then <code class="language-plaintext highlighter-rouge">terraform init</code>, that would work
+
+<div class="language-console highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gp">    shanid:~/dev$</span><span class="w"> </span>terraform workspace new us-east-1
+<span class="go">
+    Created and switched to workspace "us-east-1"!
+
+    You are now on a new, empty workspace. Workspaces isolate their state,
+    so if you run "terraform plan" Terraform will not see any existing state
+    for this configuration.
+</span></code></pre></div></div>
+
+Once the workspace is created, we should be able to run <code class="language-plaintext highlighter-rouge">terraform init</code>, <code class="language-plaintext highlighter-rouge">terraform plan</code> and <code class="language-plaintext highlighter-rouge">terraform apply</code> as usual.
+
+Once we have provisioned our resources in this region, create a workspace for a second region and re-run the terraform in that workspace to create the exact same set of AWS resources in that region.
+
+<div class="language-console highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gp">    shanid:~/dev$</span><span class="w"> </span>terraform workspace new us-west-2
+<span class="go">
+    Created and switched to workspace "us-west-2"!
+
+    You are now on a new, empty workspace. Workspaces isolate their state,
+    so if you run "terraform plan" Terraform will not see any existing state
+    for this configuration.
+</span></code></pre></div></div>
+
+The only (minor) gotcha to look out for is with regards to AWS resources that are global or globally named. IAM is an example of a global resource, and S3 is an example of a resource that has a globally scoped name. Consider the following example,
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="dl">"</span><span class="s2">aws_iam_role</span><span class="dl">"</span> <span class="dl">"</span><span class="s2">lambda_role</span><span class="dl">"</span> <span class="p">{</span>
+ <span class="nx">name</span>     <span class="o">=</span> <span class="dl">"</span><span class="s2">my_lambda_role</span><span class="dl">"</span>
+ <span class="nx">assume_role_policy</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="nx">EOF</span>
+<span class="p">{</span>
+ <span class="dl">"</span><span class="s2">Version</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2012-10-17</span><span class="dl">"</span><span class="p">,</span>
+ <span class="dl">"</span><span class="s2">Statement</span><span class="dl">"</span><span class="p">:</span> <span class="p">[</span>
+   <span class="p">{</span>
+     <span class="dl">"</span><span class="s2">Sid</span><span class="dl">"</span><span class="p">:</span> <span class="dl">""</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Effect</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Allow</span><span class="dl">"</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Principal</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+       <span class="dl">"</span><span class="s2">Service</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">lambda.amazonaws.com</span><span class="dl">"</span>
+     <span class="p">},</span>
+     <span class="dl">"</span><span class="s2">Action</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">sts:AssumeRole</span><span class="dl">"</span>
+   <span class="p">}</span>
+ <span class="p">]</span>
+<span class="p">}</span>
+<span class="nx">EOF</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+If we were to attempt to create this resource in multiple resources, we’d start running into issues. This would work just fine in the first region, but in subsequent regions, you’d start seeing errors when applying your terraform since the resource <code class="language-plaintext highlighter-rouge">my_lambda_role</code> already exists. The easiest way to solve for this, is to include the region/workspace in the name of the resource being created. For example, the following config will create distinctly named IAM roles
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="dl">"</span><span class="s2">aws_iam_role</span><span class="dl">"</span> <span class="dl">"</span><span class="s2">lambda_role</span><span class="dl">"</span> <span class="p">{</span>
+ <span class="nx">name</span>     <span class="o">=</span> <span class="dl">"</span><span class="s2">my_lambda_role_${terraform.workspace}</span><span class="dl">"</span>
+ <span class="nx">assume_role_policy</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="nx">EOF</span>
+<span class="p">{</span>
+ <span class="dl">"</span><span class="s2">Version</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2012-10-17</span><span class="dl">"</span><span class="p">,</span>
+ <span class="dl">"</span><span class="s2">Statement</span><span class="dl">"</span><span class="p">:</span> <span class="p">[</span>
+   <span class="p">{</span>
+     <span class="dl">"</span><span class="s2">Sid</span><span class="dl">"</span><span class="p">:</span> <span class="dl">""</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Effect</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Allow</span><span class="dl">"</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Principal</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+       <span class="dl">"</span><span class="s2">Service</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">lambda.amazonaws.com</span><span class="dl">"</span>
+     <span class="p">},</span>
+     <span class="dl">"</span><span class="s2">Action</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">sts:AssumeRole</span><span class="dl">"</span>
+   <span class="p">}</span>
+ <span class="p">]</span>
+<span class="p">}</span>
+<span class="nx">EOF</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+This would create a <code class="language-plaintext highlighter-rouge">my_lambda_role_us-east-1</code> role in us-east-1 and a <code class="language-plaintext highlighter-rouge">my_lambda_role_us-west-2</code> role in us-west-2. And we have maintained our objective of a single configuration that can be deployed seamlessly into multiple regions.
+
+<h3 id="conclusion">Conclusion</h3>
+
+Hopefully this approach makes it easier for you to manage your cross-region deployments much more easily with Terraform. I should acknowledge that using workspaces is probably not the only way to go about solving for this problem, but this is the way that we’ve solved for most of our deployment related challenges with the least possible amount of repetition in our configs.
+
+As always, please feel free to leave a comment if you’re having issues with the sample config or if you’re running into issues that I have not covered in this post.
+
 &hellip;</p>
         <div class="post-list__meta"><time datetime="28 Jul 2018" class="post-list__meta--date date">28 Jul 2018</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#AWS">AWS</a> <a href="/tags/#Terraform">Terraform</a> </span></div>
         <hr class="post-list__divider">
@@ -149,6 +297,96 @@
       <li>
         <h2 class="post-list__post-title post-title"><a href="/blog/akamai-cloudmonitor-on-AWS" title="Akamai log ingest and analysis with AWS">Akamai log ingest and analysis with AWS</a></h2>
         <p class="excerpt">In real world production systems, we’re always forced to concede that systems inevitably fail and we always should have our tooling ready to help us detect and fix issues as soon as they occur. We have to do this before minor issues start cascading to broader issues that start impacting our customers or our bottom lines. Having reliable log data and the ability to parse through and inspect thousands/millions of log lines in near real time can make or break our troubleshooting efforts.
+
+For web applications that are delivered on the Akamai platform, a lot of the information for troubleshooting and, more generally, understanding traffic patterns and trends is available for us on the <a href="https://control.akamai.com">Luna</a> portal. However, if we need a slightly more granular analysis of the data or a closer-to-real-time feel of the data, Akamai’s CloudMonitor feature is the way to go. CloudMonitor does have native support for enterrpise scale analysis tools like Splunk and SumoLogic, but if you’re looking for an easy and relatively cheap way to start looking at the data, Amazon Web Services (AWS) has a few services that’ll help you get going.
+
+In this blog post, I’ll try to focus more on the data ingest part of this equation and less on the Akamai property configs needed to set this up. Akamai professional services and/or the CloudMonitor product documentation can help with the latter.
+
+<h3 id="integration-approach">Integration Approach</h3>
+
+<img src="/images/posts/CloudMonitor-AWS-Integration.png" alt="Architecture" />
+
+There are a few distinct services that I had used to scale up my implementation to a state that I felt comfortable. Some of these may become more or less pertinent for your use case depending on factors like traffic to your site (the more visitors you have, the more log lines that need to flow over), data retention needs etc.
+
+<strong>API Gateway:</strong>
+The configuration for CloudMonitor delivery config in Akamai requires specifies am API end point that accepts <code class="language-plaintext highlighter-rouge">HTTP POST</code> requests. AWS API Gateway gives us an easy way to setup such an end point for CloudMonitor. For high traffic sites, expect to have a significant hits per second ratio. So as to not introduce any latency to the end point, it is very important for the API to do as minimal as possible to capture the payload and respond back with a 200 OK status code. The easiest way to accomplish this is to have the API write the payload as such to queue or topic based messaging middleware. This is where AWS Kinesis Streams comes in. API Gateway can be used to map the incoming request to Kinesis Streams (or any other AWS service, for that matter) relatively easily.
+
+In order to map the incoming payload to a Kinesis message, create a body mapping template for Content-Type <code class="language-plaintext highlighter-rouge">application/json</code> with the following configuration
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
+    </span><span class="nl">"StreamName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CloudMonitorStream"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Data"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"$util.base64Encode($input.body)"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"PartitionKey"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"$context.identity.sourceIp"</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+In plain english, this configuration takes the <code class="language-plaintext highlighter-rouge">HTTP POST</code> body, base-64 encodes it and writes to a Kinesis Stream called CloudMonitorStream. Additionally, it uses the IP address of the client calling it as the partition key for sharding the data into of many partitions of the CloudMonitorStream.
+
+<strong>Kinesis Streams:</strong>
+AWS Kinesis Streams gives us the ability to ingest large amounts of data and durably store that data while process the payload. The only real configuration needed for the Stream is to define the number of shards or partitions for the data. From the AWS documentation,
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">number_of_shards</span> <span class="o">=</span> <span class="n">max</span><span class="p">(</span><span class="n">incoming_write_bandwidth_in_KB</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span> <span class="n">outgoing_read_bandwidth_in_KB</span><span class="o">/</span><span class="mi">2000</span><span class="p">)</span>
+
+<span class="n">where</span>
+<span class="n">incoming_write_bandwidth_in_KB</span> <span class="o">=</span> <span class="n">average_data_size_in_KB</span> <span class="n">x</span> <span class="n">records_per_second</span>
+<span class="n">and</span>
+<span class="n">outgoing_read_bandwidth_in_KB</span> <span class="o">=</span> <span class="n">incoming_write_bandwidth_in_KB</span> <span class="n">x</span> <span class="n">number_of_consumers</span></code></pre></figure>
+
+<strong>Lambda:</strong> Now that we’ve gotten to a state where we can accept the payload and temporarily store it for processing, it’s time for the actual data processing to begin. This is where AWS Lambda comes into play. Lambda, if you haven’t used it yet, is the AWS implementation of the broader trend usually refered to as <em>serverless computing</em>. Lambda allows us to write code in our language of choice (currently support Java, Python, node.js and C#), and have that code get triggered automatically in response to events raised outside of that code.
+
+The code that get triggered can be used to do pretty much anything that that the runtime language supports. For this use case, I used Lambda to strip out some characters in the payload that were making life difficult downstream in ElasticSearch. I also modified the latitutde and longitude data in my CloudMonitor payload to look more like an ElasticSearch <code class="language-plaintext highlighter-rouge">geo_point</code> data type. Code snippet below to give you an idea of what I mean by this.
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">json_input</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">json_input</span><span class="p">[</span><span class="s">'geo'</span><span class="p">][</span><span class="s">'lat'</span><span class="p">])</span>
+        <span class="n">lon</span>  <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">json_input</span><span class="p">[</span><span class="s">'geo'</span><span class="p">][</span><span class="s">'long'</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="mf">0.00</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="mf">0.00</span>
+        <span class="k">pass</span>
+    <span class="n">geolocation</span> <span class="o">=</span> <span class="p">{</span><span class="s">"lat"</span><span class="p">:</span><span class="n">lat</span><span class="p">,</span><span class="s">"lon"</span><span class="p">:</span> <span class="n">lon</span><span class="p">}</span>
+    <span class="n">json_input</span><span class="p">[</span><span class="s">'geo'</span><span class="p">][</span><span class="s">'location'</span><span class="p">]</span> <span class="o">=</span> <span class="n">geolocation</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">json_input</span><span class="p">)</span></code></pre></figure>
+
+This bit of code changes out my CloudMonitor payload from
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="nl">"geo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"country"</span><span class="p">:</span><span class="w"> </span><span class="s2">"US"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"IL"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"city"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SPRINGFIELD"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"lat"</span><span class="p">:</span><span class="w"> </span><span class="s2">"39.7998"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"long"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-89.6494"</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+to this
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="nl">"geo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+       </span><span class="nl">"city"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SPRINGFIELD"</span><span class="p">,</span><span class="w">
+       </span><span class="nl">"country"</span><span class="p">:</span><span class="w"> </span><span class="s2">"US"</span><span class="p">,</span><span class="w">
+       </span><span class="nl">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"IL"</span><span class="p">,</span><span class="w">
+       </span><span class="nl">"long"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-89.6494"</span><span class="p">,</span><span class="w">
+       </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+           </span><span class="nl">"lat"</span><span class="p">:</span><span class="w"> </span><span class="mf">39.7998</span><span class="p">,</span><span class="w">
+           </span><span class="nl">"lon"</span><span class="p">:</span><span class="w"> </span><span class="mf">-89.6494</span><span class="w">
+       </span><span class="p">},</span><span class="w">
+       </span><span class="nl">"lat"</span><span class="p">:</span><span class="w"> </span><span class="s2">"39.7998"</span><span class="w">
+   </span><span class="p">}</span></code></pre></figure>
+
+Once we have the data payload formatted and modified, we can write out this formatted json object into my Kinesis Firehose instance.
+
+<strong>Kinesis Firehose:</strong>
+Although, they’re both branded “Kinesis” by AWS, the function of Kinesis Firehose is slightly different from the function of Kinesis Streams. The objective with using Kinesis Firehose is to transfer data from a source to a defined data sink like S3, ElasticSearch Service or Redshift. Firehose helps manage logic for retry, failures etc for the data that is flowing through it. Configuration for Firehose instances are quite painless and very easy to manage.
+
+With the help of Firehose, we should be able to write data into one of the supported data sinks where we can subsequently analyze and visualize the data from CloudMonitor to our hearts content!
+
+<img src="/images/posts/CloudMonitor-KibanaChart.png" alt="CloudMonitor-Visualization" />
+
+<em>Image: HTTP Response codes over time</em>
+
+<h3 id="conclusion">Conclusion</h3>
+
+By putting together the AWS services highlighted above, we’ve created a solution to ingest large volumes of log data from Akamai CloudMonitor to a data store that we can use for data discovery and analysis. While this blog post talks about this approach in the context of Akamai, these AWS services could really be used for ingest and processing of any large stream of data.
+
+If you need additional details about any aspect of this integration, or if you have alternate approaches that you’d like to share, please post a comment below.
 
 &hellip;</p>
         <div class="post-list__meta"><time datetime="26 Feb 2017" class="post-list__meta--date date">26 Feb 2017</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#Akamai">Akamai</a> <a href="/tags/#AWS">AWS</a> <a href="/tags/#Kinesis">Kinesis</a> <a href="/tags/#Lambda">Lambda</a> <a href="/tags/#Integration">Integration</a> </span></div>
@@ -159,6 +397,72 @@
         <h2 class="post-list__post-title post-title"><a href="/blog/apache-kafka-with-dotnet" title="Apache Kafka Integration with .net">Apache Kafka Integration with .net</a></h2>
         <p class="excerpt">In my last post on <a href="/blog/apache-avro-on-dotnet">Apache Avro</a>, I hinted at additional use cases for Avro serialzed data. In this post, I’d like to walk through serializing my data to an <a href="https://kafka.apache.org/">Apache Kafka</a> topic.
 
+For anyone who is not familiar with it yet, Apache Kafka is a high throughput, distributed, partitioned messaging system. Data is published to Kafka topics where it will become available for consumption by any number of consumers subscribing to the topic.
+
+<h3 id="solution-setup">Solution Setup</h3>
+
+One of the interesting things about the Kafka project, is that the implementation for Kafka clients (other than the default jvm client) is not maintained by the project. The idea is for outside implementers who are more familiar with their development platforms have greater velocity in developing clients. For .net itself, the project <a href="https://cwiki.apache.org/confluence/display/KAFKA/Clients#Clients-.net">lists</a> quite a few different external implementations. Unfortunately, not all these appeared to be in the same levels of completion and required a bit of poking around to figure things out. For the little project that I was looking at, we eventually decided to go with Microsoft’s implememtation called <a href="https://github.com/Microsoft/Kafkanet">Kafkanet</a>.
+
+In order to use the Kafkanet client, start off by downloading the source code and building the solution. So as to make it easier to consume in my solution, I packaged up the binaries in a nuget package. The only dependency needed for this nuget package was the Apache Zookeeper .net client which is available on nuget.org. I’ve added my nuspec file below for reference, should you need it..
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="nt">&lt;package</span> <span class="na">xmlns=</span><span class="s">"http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;metadata&gt;</span>
+        <span class="nt">&lt;id&gt;</span>Microsoft.Kafkanet<span class="nt">&lt;/id&gt;</span>
+        <span class="nt">&lt;version&gt;</span>0.0.58.1<span class="nt">&lt;/version&gt;</span>
+        <span class="nt">&lt;title&gt;</span>KafkaNet.Library<span class="nt">&lt;/title&gt;</span>
+        <span class="nt">&lt;authors&gt;</span>Microsoft<span class="nt">&lt;/authors&gt;</span>
+        <span class="nt">&lt;projectUrl&gt;</span>https://github.com/Microsoft/Kafkanet<span class="nt">&lt;/projectUrl&gt;</span>
+        <span class="nt">&lt;iconUrl&gt;</span>https://kafka.apache.org/images/kafka_logo.png<span class="nt">&lt;/iconUrl&gt;</span>
+        <span class="nt">&lt;requireLicenseAcceptance&gt;</span>false<span class="nt">&lt;/requireLicenseAcceptance&gt;</span>
+        <span class="nt">&lt;description&gt;</span>Build of Microsoft Kafkanet solution https://github.com/Microsoft/Kafkanet<span class="nt">&lt;/description&gt;</span>
+        <span class="nt">&lt;dependencies&gt;</span>
+            <span class="nt">&lt;group</span> <span class="na">targetFramework=</span><span class="s">".NETFramework4.5"</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;dependency</span> <span class="na">id=</span><span class="s">"ZooKeeper.Net"</span> <span class="na">version=</span><span class="s">"3.4.6.2"</span> <span class="nt">/&gt;</span>
+            <span class="nt">&lt;/group&gt;</span>
+        <span class="nt">&lt;/dependencies&gt;</span>
+    <span class="nt">&lt;/metadata&gt;</span>
+    <span class="nt">&lt;files&gt;</span>
+        <span class="nt">&lt;file</span> <span class="na">src=</span><span class="s">"lib\KafkaNET.Library.dll"</span> <span class="na">target=</span><span class="s">"lib\KafkaNET.Library.dll"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/files&gt;</span>
+<span class="nt">&lt;/package&gt;</span></code></pre></figure>
+
+<h3 id="sample-code">Sample code</h3>
+
+Picking up where I left off the Avro serialization example, here’s some sample code that takes the data and pushes that over to a Kafka topic
+
+<figure class="highlight"><pre><code class="language-c#" data-lang="c#"><span class="c1">//Connect to Kafka instance
+</span>
+<span class="kt">var</span> <span class="n">brokerConfig</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">BrokerConfiguration</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="n">BrokerId</span> <span class="p">=</span> <span class="m">0</span><span class="p">,</span>
+	<span class="n">Host</span> <span class="p">=</span> <span class="s">"kafka-dev-instance"</span><span class="p">,</span>
+	<span class="n">Port</span> <span class="p">=</span> <span class="m">9092</span>
+<span class="p">}</span>
+<span class="kt">var</span> <span class="n">config</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">ProducerConfiguration</span><span class="p">(</span><span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">BrokerConfiguration</span><span class="p">&gt;</span> <span class="p">{</span> <span class="n">brokerConfig</span> <span class="p">});</span>
+
+<span class="c1">//Create Avro serialized stream 
+</span>
+<span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MemoryStream</span><span class="p">();</span>
+<span class="n">Encoder</span> <span class="n">encoder</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Avro</span><span class="p">.</span><span class="n">IO</span><span class="p">.</span><span class="nf">BinaryEncoder</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+<span class="kt">var</span> <span class="n">writer</span> <span class="p">=</span> 
+	<span class="k">new</span> <span class="n">Avro</span><span class="p">.</span><span class="n">Specific</span><span class="p">.</span><span class="n">SpecificWriter</span><span class="p">&lt;</span><span class="n">Error</span><span class="p">&gt;(</span><span class="k">new</span> <span class="nf">SpecificDefaultWriter</span><span class="p">(</span><span class="n">error</span><span class="p">.</span><span class="n">Schema</span><span class="p">));</span>
+<span class="n">writer</span><span class="p">.</span><span class="nf">Write</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">encoder</span><span class="p">);</span> 
+
+<span class="c1">//Publish to Kafka
+</span>
+<span class="kt">var</span> <span class="n">msg</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="nf">Message</span><span class="p">(</span><span class="n">stream</span><span class="p">.</span><span class="nf">ToArray</span><span class="p">());</span>
+<span class="kt">var</span> <span class="n">producerData</span> <span class="p">=</span> 
+	<span class="k">new</span> <span class="n">ProducerData</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="n">Message</span><span class="p">&gt;(</span><span class="s">"kafka-topicname"</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">.</span><span class="k">value</span><span class="p">.</span><span class="nf">ToString</span><span class="p">(),</span> <span class="n">msg</span><span class="p">);</span>
+<span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">producer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Producer</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="n">Kafka</span><span class="p">.</span><span class="n">Client</span><span class="p">.</span><span class="n">Messages</span><span class="p">.</span><span class="n">Message</span><span class="p">&gt;(</span><span class="n">config</span><span class="p">))</span>
+<span class="p">{</span>
+	<span class="n">producer</span><span class="p">.</span><span class="nf">Send</span><span class="p">(</span><span class="n">producerData</span><span class="p">);</span>
+<span class="p">}</span> </code></pre></figure>
+
+… and voila, you are now writing your Avro serilialized data into a Kafka topic. As you can see, the code is mostly straight forward but it did take a few hours of digging in to the code to get this right.
+
+Hope this proves helpful to anyone else trying to do something similar. As always, feel free to leave a comment.
+
 &hellip;</p>
         <div class="post-list__meta"><time datetime="12 Apr 2016" class="post-list__meta--date date">12 Apr 2016</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#Apache Kafka">Apache Kafka</a> <a href="/tags/#Integration">Integration</a> </span></div>
         <hr class="post-list__divider">
@@ -167,6 +471,179 @@
       <li>
         <h2 class="post-list__post-title post-title"><a href="/blog/apache-avro-on-dotnet" title="Apache Avro on .net">Apache Avro on .net</a></h2>
         <p class="excerpt">Recently, I had an opportunity to work a very interesting prototype using <a href="https://avro.apache.org/docs/1.7.7/">Apache Avro</a> and <a href="https://kafka.apache.org/">Apache Kafka</a>. For those of you who haven’t worked with it yet, Avro is a data serialization system that allows for rich data structures and promises an easy integration for use in many languages. Avro requires a schema to define the data being serialized. In other words, metadata about the data that is being serialized. If it helps, think of the Avro schema being akin to an XSD document for XML.
+
+Avro does, in fact, have a C# library and code gen tools for generating POCOs from avro schema files. Unfortunately, not a whole lot of documentation exists for either. It took a quite a bit of trial and error to get my serialization logic nailed down. Hopefully this post will help others get started using Avro a lot more easily than I was able to..
+
+<h3 id="solution-setup">Solution Setup</h3>
+
+For the purpose of illustration, I’ve setup a fairly simplistic console app that will create an Avro serialized file stream. After creating the solution in Visual Studio, we start off by pulling in the Avro libraries. Fortunately, nuget.org does have nuget packages for Avro. The <a href="https://www.nuget.org/packages/Apache.Avro/">Avro</a> package contains the core libraries and the <a href="https://www.nuget.org/packages/Apache.Avro.Tools/">Avro Tools</a> package contains the code gen utility.
+
+<h3 id="avro-schemas--code-generation">Avro Schemas &amp; Code generation</h3>
+
+The first step towards getting the serialization to work is to define the schema for the objects that I would like to serialize. In my hypothetical example, I’d like to define a schema for capturing Errors as they occur in a web application and serializing those to a Kafka based system. (We’ll focus on the Avro part for now, and leave the Kafka bits for later).
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Error"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error record for my application"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"System-generated numeric ID"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"appname"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+	</span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"details"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Details of the error"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error.ErrorDetails"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+As you can see, I have three fields in my record - an id, the name of the application that generated the error and a complex type called details.  The description for my complex type looks like this.
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ErrorDetails"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error details record"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"category"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Category of the error. Eg: DatabaseConnectionError"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"severity"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The severity of the error. Eg: CRITICAL, FATAL, WARNING"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+	</span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Timestamp (UNIX epoch) of error"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"long"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+The next step would be to generate the C# code using these schemas. This, unfortunately, is where we enter into completely undocumented feature space. Assuming you’ve added the  <a href="https://www.nuget.org/packages/Apache.Avro.Tools/">Avro Tools</a> package to your solution, the codegen utility (codegen.exe) will exist inside the <code class="language-plaintext highlighter-rouge">packages\Apache.Avro.Tools.1.7.7.4\lib</code> folder. I tried a number of different ways to get the code generation to work across multiple schema files, but did not have a whole lot of success getting the utility to work.
+
+In the end, I had to copy avrogen.exe, Avro.dll (from the Avro package lib directory) and Newtonsoft.Json.dll into a folder along with the avsc file to get this to work. Additionally, I have to merge the two schema types into a single file. A bit of cop out, I’ll admit, and one of these days I plan to get back to figuring out if there is a better way to do this.
+
+In the end, this is what my merged schema file looked like
+
+<figure class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span><span class="w">
+	</span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur"</span><span class="p">,</span><span class="w">
+	</span><span class="nl">"type"</span><span class="p">:[</span><span class="w">
+		</span><span class="p">{</span><span class="w">
+		  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ErrorDetails"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error details record"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+			</span><span class="p">{</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"category"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Category of the error. Eg: DatabaseConnectionError"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+			</span><span class="p">},</span><span class="w">
+			</span><span class="p">{</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"severity"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The severity of the error. Eg: FATAL, WARNING"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+			</span><span class="p">},</span><span class="w">
+			</span><span class="p">{</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"timestamp"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Timestamp (UNIX epoch) of error"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"long"</span><span class="w">
+			</span><span class="p">}</span><span class="w">
+		  </span><span class="p">]</span><span class="w">
+		</span><span class="p">},</span><span class="w">
+		</span><span class="p">{</span><span class="w">
+		  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"record"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Error"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"This is an error record for my application"</span><span class="p">,</span><span class="w">
+		  </span><span class="nl">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+			</span><span class="p">{</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"System-generated numeric ID"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"int"</span><span class="w">
+			</span><span class="p">},</span><span class="w">
+			</span><span class="p">{</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"appname"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+			</span><span class="p">},</span><span class="w">
+			</span><span class="p">{</span><span class="w">
+			  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"details"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"doc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The name of the application generating the error"</span><span class="p">,</span><span class="w">
+			  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"com.shanidgafur.error.ErrorDetails"</span><span class="w">
+			</span><span class="p">}</span><span class="w">
+		  </span><span class="p">]</span><span class="w">
+		</span><span class="p">}</span><span class="w">
+	</span><span class="p">]</span><span class="w">
+</span><span class="p">}</span></code></pre></figure>
+
+Once I had all this squared away, the actual code generation part came down to a single command
+
+<code class="language-plaintext highlighter-rouge">avrogen.exe -s Error-Merged.avsc .</code>
+
+This generates two .cs files that I then just pulled into my solution.
+
+<h3 id="avro-serialization-to-disk">Avro Serialization to disk</h3>
+
+This was another area where there really wasn’t a whole lot of good sample code to explain the use of the library. Ended up looking at usage of the Java library to figure this out.
+
+<figure class="highlight"><pre><code class="language-c#" data-lang="c#"><span class="c1">//Calculate Epoch Timestamp
+</span>
+<span class="n">DateTime</span> <span class="n">EpochBeginDate</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">DateTime</span><span class="p">(</span><span class="m">1970</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
+<span class="kt">long</span> <span class="n">CurrentTimestamp</span> <span class="p">=</span>
+	<span class="p">(</span><span class="kt">long</span><span class="p">)(</span><span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="nf">ToUniversalTime</span><span class="p">()</span> <span class="p">-</span> <span class="n">EpochBeginDate</span><span class="p">.</span><span class="nf">ToUniversalTime</span><span class="p">()).</span><span class="n">TotalSeconds</span><span class="p">;</span>
+
+<span class="c1">//Populate the code generated Avro POCOs with data to be serialized
+</span>
+<span class="n">ErrorDetails</span> <span class="n">details</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ErrorDetails</span>
+<span class="p">{</span>
+	<span class="n">Category</span> <span class="p">=</span> <span class="s">"DBConnectivity"</span><span class="p">,</span>
+	<span class="n">Severity</span> <span class="p">=</span> <span class="s">"FATAL"</span><span class="p">,</span>
+	<span class="n">Timestamp</span> <span class="p">=</span> <span class="n">CurrentTimestamp</span>                    
+<span class="p">};</span>
+<span class="n">Error</span> <span class="n">apperror</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Error</span>
+<span class="p">{</span>
+	<span class="n">Details</span> <span class="p">=</span> <span class="n">details</span><span class="p">,</span>
+	<span class="n">Appname</span> <span class="p">=</span> <span class="s">"MyApplication"</span><span class="p">,</span>
+	<span class="n">Id</span> <span class="p">=</span> <span class="m">123</span>
+<span class="p">};</span>
+
+<span class="c1">//Setup File Stream for serialization
+</span>
+<span class="kt">string</span> <span class="n">filelocation</span> <span class="p">=</span> <span class="s">@"c:\temp\avro.bin"</span><span class="p">;</span>
+<span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">FileStream</span><span class="p">(</span><span class="n">filelocation</span><span class="p">,</span> 
+				<span class="n">FileMode</span><span class="p">.</span><span class="n">OpenOrCreate</span><span class="p">,</span> 
+				<span class="n">FileAccess</span><span class="p">.</span><span class="n">ReadWrite</span><span class="p">,</span> 
+				<span class="n">FileShare</span><span class="p">.</span><span class="n">Write</span><span class="p">);</span>
+
+<span class="c1">//Endode the stream and write to file system
+</span>
+<span class="n">Avro</span><span class="p">.</span><span class="n">IO</span><span class="p">.</span><span class="n">Encoder</span> <span class="n">encoder</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">BinaryEncoder</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+<span class="n">SpecificDefaultWriter</span> <span class="n">writer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Avro</span><span class="p">.</span><span class="n">Specific</span><span class="p">.</span><span class="nf">SpecificDefaultWriter</span><span class="p">(</span><span class="n">apperror</span><span class="p">.</span><span class="n">Schema</span><span class="p">);</span>
+<span class="n">writer</span><span class="p">.</span><span class="n">Write</span><span class="p">&lt;</span><span class="n">Error</span><span class="p">&gt;(</span><span class="n">apperror</span><span class="p">,</span> <span class="n">encoder</span><span class="p">);</span>
+
+<span class="n">stream</span><span class="p">.</span><span class="nf">Close</span><span class="p">();</span></code></pre></figure>
+
+Build and run this code to get the serialized data written to disk. While this may not seem as much, we should consider that once we get the Avro serialization taken care of, the data can be streamed not only to the file system but across the wire as well.
+
+<h3 id="conclusion">Conclusion</h3>
+
+Hopefully, this post helps someone get a head start into using Avro on the .net platform. For anyone who’s interested, the full solution is available <a href="https://gitlab.com/shanidgafur/AvroSampleCode">here</a>. Please feel free to fork and add more useful bits to the code.
+
+I should point out that I, myself, am very new to Avro and am still learning the nuances that go with the framework. If you have a helpful hint or tip, please do leave a comment..
 
 &hellip;</p>
         <div class="post-list__meta"><time datetime="7 Apr 2016" class="post-list__meta--date date">7 Apr 2016</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#Apache Avro">Apache Avro</a> </span></div>
@@ -177,6 +654,17 @@
         <h2 class="post-list__post-title post-title"><a href="/blog/blog-facelift" title="Blog face lift">Blog face lift</a></h2>
         <p class="excerpt">Since setting up this blog, I’ve been tweaking away little things to make them ever so slightly better. Integrating web analytics, diqus comments integration etc etc. One of the things that I’ve been meaning to do but did not get really get around to was changing the look and feel of the default jekyll site.
 
+<h4 id="jekyll-themes-ftw">Jekyll themes FTW</h4>
+In case you haven’t already checked it out, head on over to the <a href="http://jekyllthemes.org/">jekyll themes</a> site to check out the wide range of possibilities. The gallery of themes is pretty darn impressive and it’s hard not to find at least a few that you like. I finally settled on a nice minimalistic theme by <a href="https://github.com/joshgerdes">Josh Gerdes</a>.
+
+<h4 id="before">Before</h4>
+<img src="/images/posts/basic-look.png" alt="Before" />
+
+<h4 id="after">After</h4>
+<img src="/images/posts/themed-look.png" alt="After" />
+
+Knowing me, I’m probably not even close to done tinkering with this site. Continuing to enjoy jekyll and the ecosystem of plugins, themes etc that are supported. Have a suggestion for tweaking things further? A plugin that you’d like to recommend, perhaps? Add a note in the comments section below…
+
 &hellip;</p>
         <div class="post-list__meta"><time datetime="20 Mar 2016" class="post-list__meta--date date">20 Mar 2016</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#jekyll">jekyll</a> </span></div>
         <hr class="post-list__divider">
@@ -185,6 +673,107 @@
       <li>
         <h2 class="post-list__post-title post-title"><a href="/blog/setting-up-this-blog" title="Setting up this blog">Setting up this blog</a></h2>
         <p class="excerpt">Since this is the very first post on this blog, and I am not sure how many posts will follow this one, I’ve decided to start off by just explaining how this blog has been setup and how you, too, can have your very own shiny new blog on github pages.
+
+For what it’s worth, I’ve discovered there’s quite a few blog posts out there that talk through all of the steps outlined below, in quite a bit more detail. You can consider this the TL;DR version of those posts.
+
+<h4 id="domain-setup-githubio">Domain Setup: Github.io</h4>
+This is super straight forward, and there’s really nothing more that I can add to the documentation from <a href="https://pages.github.com/">Github Pages</a>.
+
+<h4 id="jekyll-installation">Jekyll Installation</h4>
+
+This is my first time using <a href="https://jekyllrb.com/">Jekyll</a> and I have to say that I’m really impressed by the sheer simplicity and ease of use.
+
+As a windows user, setting up my local blogging environment came down to the following few steps
+
+<ul>
+  <li>(If you don’t already have this..) Install <a href="https://chocolatey.org/">chocolatey</a>. In a powershell window, run the following command</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PS:\&gt;iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+</code></pre></div></div>
+
+<ul>
+  <li>Install ruby</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>choco install ruby -y
+</code></pre></div></div>
+
+<ul>
+  <li>Install jekyll</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gem install jekyll
+</code></pre></div></div>
+
+<h4 id="setup-your-blog">Setup your blog</h4>
+
+The setup and customization of your blog is where you will really start to get to know jekyll. Start off first by creating you new blog
+
+<code class="language-plaintext highlighter-rouge">jekyll new myblog</code>
+
+What this will do will create a folder structure similar to the below
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">.</span>
+├── _config.yml
+├── _drafts
+|   └── this-is-a-draft.markdown
+├── _includes
+|   ├── footer.html
+|   └── header.html
+├── _layouts
+|   ├── default.html
+|   └── post.html
+├── _posts
+|   └── 2016-03-01-this-is-a-post.markdown
+├── _site
+├── .jekyll-metadata
+└── index.html</code></pre></figure>
+
+Right off the bat, you can run this sample site to see what the blog looks like by running the following comand
+
+<code class="language-plaintext highlighter-rouge">jekyll serve</code>
+
+This will start off a running instance of the generated html for the site, and you will be able to see this at <a href="http://localhost:4000/">http://localhost:4000/</a>
+
+To see draft posts
+
+<code class="language-plaintext highlighter-rouge">jekyll serve --drafts</code>
+
+At a high level, the <code class="language-plaintext highlighter-rouge">_layouts</code> folder contains (as expected) the overall layouts of the site. The layouts themselves are mostly html with a bit of <a href="https://github.com/Shopify/liquid/wiki/Liquid-for-Designers#standard-filters">liquid</a> tags mixed in. Layouts themselves mostly serve as placeholders for html includes that exist in the <code class="language-plaintext highlighter-rouge">_includes</code> folder. With these two building blocks in place, changing the look and feel of the site boils down to one of two things
+
+<ul>
+  <li>To change the overall organization of the page, tweak the layout.</li>
+  <li>To add additional snippets of reusable html, javascript, css into the layout, create a new include file and reference that in the layout.</li>
+</ul>
+
+<h4 id="creating-a-post">Creating a post</h4>
+
+Blog posts and pages in general can be created using markdown or html. The only thing the page really needs is the <a href="https://jekyllrb.com/docs/frontmatter/">Front Matter</a> block that specifies some attributes of the page like the layout to be used, tags on the page etc. For example, here’s the Front Matter block for this page.
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>---
+layout: post
+title: "Setting up this blog"
+summary: This post talks about the process followed to setup a blog on github pages using jekyll
+tags: [jekyll,blogging,github pages, discus]
+---
+</code></pre></div></div>
+
+You can create pages in the <code class="language-plaintext highlighter-rouge">_drafts</code> folder and review the page using the <code class="language-plaintext highlighter-rouge">jekyll serve --drafts</code> command mentioned above.
+
+Once you’re good with the way the page looks, you can copy the draft  to the <code class="language-plaintext highlighter-rouge">_posts</code> folder. Remember that posts need to use the following naming convention <code class="language-plaintext highlighter-rouge">YEAR-MONTH-DAY-title.MARKUP</code>
+
+<h4 id="publishing">Publishing</h4>
+
+All you really need to do is use the following command
+
+<code class="language-plaintext highlighter-rouge">jekyll build --destination &lt;destination&gt;</code>
+
+Check the output of the build to the repo for github page, and voila you’re done!
+
+Hopefully this guide helps you along as your way as you attempt to start your own experiments with Jekyll. If you’ve found this useful or have some additional tips for jekyll users, please leave me a comment or hit me up on twitter.
+
+Cheers!
 
 &hellip;</p>
         <div class="post-list__meta"><time datetime="16 Mar 2016" class="post-list__meta--date date">16 Mar 2016</time> &#8226; <span class="post-meta__tags">on <a href="/tags/#jekyll">jekyll</a> <a href="/tags/#github-pages">github-pages</a> </span></div>
@@ -201,7 +790,7 @@
       </div>
 
       <footer class="footer">
-  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
+  <span class="footer__copyright">&copy; 2024 Shanid Gafur. All rights reserved.</span>
 </footer> 
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>

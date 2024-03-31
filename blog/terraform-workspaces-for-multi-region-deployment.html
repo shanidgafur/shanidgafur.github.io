@@ -148,54 +148,52 @@
 
 <p>For Terraform to be able to map resources in your config files to resources that have been provisioned in AWS or any other provider, it maintains a sort of lookup table in the form of the “Terraform State”. For example, if you were to have the following in your tf project</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"aws_s3_bucket"</span> <span class="s2">"my-s3-bucket"</span> <span class="p">{</span>
-  <span class="nx">bucket</span> <span class="o">=</span> <span class="s2">"my-s3-bucket"</span>
-  <span class="nx">acl</span>    <span class="o">=</span> <span class="s2">"private"</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="dl">"</span><span class="s2">aws_s3_bucket</span><span class="dl">"</span> <span class="dl">"</span><span class="s2">my-s3-bucket</span><span class="dl">"</span> <span class="p">{</span>
+  <span class="nx">bucket</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">my-s3-bucket</span><span class="dl">"</span>
+  <span class="nx">acl</span>    <span class="o">=</span> <span class="dl">"</span><span class="s2">private</span><span class="dl">"</span>
 
   <span class="nx">tags</span> <span class="p">{</span>
-    <span class="nx">Name</span>        <span class="o">=</span> <span class="s2">"my-s3-bucket"</span>
-    <span class="nx">Environment</span> <span class="o">=</span> <span class="s2">"dev"</span>
+    <span class="nx">Name</span>        <span class="o">=</span> <span class="dl">"</span><span class="s2">my-s3-bucket</span><span class="dl">"</span>
+    <span class="nx">Environment</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">dev</span><span class="dl">"</span>
   <span class="p">}</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 <p>Terraform will maintain a reference to the ARN of the actual S3 bucket and its other attributes in its state file, like so</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
-    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aws_s3_bucket"</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"primary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-          </span><span class="nt">"acceleration_status"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"acl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"private"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"arn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:s3:::my-s3-bucket"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"bucket"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"cors_rule.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"force_destroy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"logging.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"us-east-1"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"replication_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"server_side_encryption_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"tags.%"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"tags.Environment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"tags.Name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"versioning.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"versioning.0.enabled"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
-          </span><span class="nt">"versioning.0.mfa_delete"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="w">
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aws_s3_bucket"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"primary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"acceleration_status"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"acl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"private"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"arn"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:s3:::my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"bucket"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"cors_rule.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"force_destroy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"logging.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"us-east-1"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"replication_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"server_side_encryption_configuration.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"tags.%"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"tags.Environment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"tags.Name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"my-s3-bucket"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"versioning.#"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"versioning.0.enabled"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"versioning.0.mfa_delete"</span><span class="p">:</span><span class="w"> </span><span class="s2">"false"</span><span class="w">
       </span><span class="p">},</span><span class="w">
-    </span><span class="nt">"meta"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
-    </span><span class="nt">"tainted"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+    </span><span class="nl">"meta"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"tainted"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
     </span><span class="p">},</span><span class="w">
-  </span><span class="nt">"deposed"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
-  </span><span class="nt">"provider"</span><span class="p">:</span><span class="w"> </span><span class="s2">"provider.aws.east1"</span><span class="w">
+  </span><span class="nl">"deposed"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="nl">"provider"</span><span class="p">:</span><span class="w"> </span><span class="s2">"provider.aws.east1"</span><span class="w">
 </span><span class="p">}</span><span class="w">
-</span></code></pre>
-</div>
+</span></code></pre></div></div>
 
 <p>Within a Terraform state, there can only be one resource for a given name. In it’s simplest form, if I wanted to create many instances of resources like S3 buckets, for example, I would define multiple resources in my terraform config - one per resource. This becomes a bit tedious (not to mention a big violation of the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY principle</a>) when all the resources are exactly the same in terms of configuration except for, perhaps, its name. This is especially true for services like AWS API Gateway where Terraform configs requires at least 5-6 resources to be defined for even a simplistic “Hello World” type scenario.</p>
 
-<p>Terraform <a href="https://www.terraform.io/docs/state/workspaces.html">workspaces</a> (previously referred to as Terraform environments), is a way to address this concern with repetitive configurations. It is essentially a mechanism to partition the Terraform state so that many instances to the same resource can exists within it. The most commonly stated use case for this is to define a resource like an ec2 instance or a load balancer once per SDLC environment - in other words, define the resource once but <code class="highlighter-rouge">terraform apply</code> using the same configuration separately for “dev”, “qa”, and “prod” environments. This same capability can also be used to manage multi-region deployments.</p>
+<p>Terraform <a href="https://www.terraform.io/docs/state/workspaces.html">workspaces</a> (previously referred to as Terraform environments), is a way to address this concern with repetitive configurations. It is essentially a mechanism to partition the Terraform state so that many instances to the same resource can exists within it. The most commonly stated use case for this is to define a resource like an ec2 instance or a load balancer once per SDLC environment - in other words, define the resource once but <code class="language-plaintext highlighter-rouge">terraform apply</code> using the same configuration separately for “dev”, “qa”, and “prod” environments. This same capability can also be used to manage multi-region deployments.</p>
 
 <h3 id="the-case-for-multi-region-deployments">The case for multi-region Deployments</h3>
 
@@ -213,83 +211,80 @@
 
 <p>We’ll start by defining the configuration to reference the workspace name in our provider definition</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">provider</span> <span class="s2">"aws"</span> <span class="p">{</span>
- <span class="nx">region</span> <span class="o">=</span> <span class="s2">"${terraform.workspace}"</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">provider</span> <span class="dl">"</span><span class="s2">aws</span><span class="dl">"</span> <span class="p">{</span>
+ <span class="nx">region</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">${terraform.workspace}</span><span class="dl">"</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
-<p>Note that once this config is added, <code class="highlighter-rouge">terraform init</code> will no longer work in the <code class="highlighter-rouge">default</code> workspace, since (as you may have guessed) there is no <code class="highlighter-rouge">default</code> region for AWS. However, if we were to create a workspace corresponding to a valid AWS region and then <code class="highlighter-rouge">terraform init</code>, that would work</p>
+<p>Note that once this config is added, <code class="language-plaintext highlighter-rouge">terraform init</code> will no longer work in the <code class="language-plaintext highlighter-rouge">default</code> workspace, since (as you may have guessed) there is no <code class="language-plaintext highlighter-rouge">default</code> region for AWS. However, if we were to create a workspace corresponding to a valid AWS region and then <code class="language-plaintext highlighter-rouge">terraform init</code>, that would work</p>
 
-<pre><code class="language-console">    shanid:~/dev$ terraform workspace new us-east-1
-
+<div class="language-console highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gp">    shanid:~/dev$</span><span class="w"> </span>terraform workspace new us-east-1
+<span class="go">
     Created and switched to workspace "us-east-1"!
 
     You are now on a new, empty workspace. Workspaces isolate their state,
     so if you run "terraform plan" Terraform will not see any existing state
     for this configuration.
-</code></pre>
+</span></code></pre></div></div>
 
-<p>Once the workspace is created, we should be able to run <code class="highlighter-rouge">terraform init</code>, <code class="highlighter-rouge">terraform plan</code> and <code class="highlighter-rouge">terraform apply</code> as usual.</p>
+<p>Once the workspace is created, we should be able to run <code class="language-plaintext highlighter-rouge">terraform init</code>, <code class="language-plaintext highlighter-rouge">terraform plan</code> and <code class="language-plaintext highlighter-rouge">terraform apply</code> as usual.</p>
 
 <p>Once we have provisioned our resources in this region, create a workspace for a second region and re-run the terraform in that workspace to create the exact same set of AWS resources in that region.</p>
 
-<pre><code class="language-console">    shanid:~/dev$ terraform workspace new us-west-2
-
+<div class="language-console highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gp">    shanid:~/dev$</span><span class="w"> </span>terraform workspace new us-west-2
+<span class="go">
     Created and switched to workspace "us-west-2"!
 
     You are now on a new, empty workspace. Workspaces isolate their state,
     so if you run "terraform plan" Terraform will not see any existing state
     for this configuration.
-</code></pre>
+</span></code></pre></div></div>
 
 <p>The only (minor) gotcha to look out for is with regards to AWS resources that are global or globally named. IAM is an example of a global resource, and S3 is an example of a resource that has a globally scoped name. Consider the following example,</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"aws_iam_role"</span> <span class="s2">"lambda_role"</span> <span class="p">{</span>
- <span class="nx">name</span>     <span class="o">=</span> <span class="s2">"my_lambda_role"</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="dl">"</span><span class="s2">aws_iam_role</span><span class="dl">"</span> <span class="dl">"</span><span class="s2">lambda_role</span><span class="dl">"</span> <span class="p">{</span>
+ <span class="nx">name</span>     <span class="o">=</span> <span class="dl">"</span><span class="s2">my_lambda_role</span><span class="dl">"</span>
  <span class="nx">assume_role_policy</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="nx">EOF</span>
 <span class="p">{</span>
- <span class="s2">"Version"</span><span class="err">:</span> <span class="s2">"2012-10-17"</span><span class="p">,</span>
- <span class="s2">"Statement"</span><span class="err">:</span> <span class="p">[</span>
+ <span class="dl">"</span><span class="s2">Version</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2012-10-17</span><span class="dl">"</span><span class="p">,</span>
+ <span class="dl">"</span><span class="s2">Statement</span><span class="dl">"</span><span class="p">:</span> <span class="p">[</span>
    <span class="p">{</span>
-     <span class="s2">"Sid"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
-     <span class="s2">"Effect"</span><span class="p">:</span> <span class="s2">"Allow"</span><span class="p">,</span>
-     <span class="s2">"Principal"</span><span class="p">:</span> <span class="p">{</span>
-       <span class="s2">"Service"</span><span class="p">:</span> <span class="s2">"lambda.amazonaws.com"</span>
+     <span class="dl">"</span><span class="s2">Sid</span><span class="dl">"</span><span class="p">:</span> <span class="dl">""</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Effect</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Allow</span><span class="dl">"</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Principal</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+       <span class="dl">"</span><span class="s2">Service</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">lambda.amazonaws.com</span><span class="dl">"</span>
      <span class="p">},</span>
-     <span class="s2">"Action"</span><span class="err">:</span> <span class="s2">"sts:AssumeRole"</span>
+     <span class="dl">"</span><span class="s2">Action</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">sts:AssumeRole</span><span class="dl">"</span>
    <span class="p">}</span>
  <span class="p">]</span>
 <span class="p">}</span>
 <span class="nx">EOF</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
-<p>If we were to attempt to create this resource in multiple resources, we’d start running into issues. This would work just fine in the first region, but in subsequent regions, you’d start seeing errors when applying your terraform since the resource <code class="highlighter-rouge">my_lambda_role</code> already exists. The easiest way to solve for this, is to include the region/workspace in the name of the resource being created. For example, the following config will create distinctly named IAM roles</p>
+<p>If we were to attempt to create this resource in multiple resources, we’d start running into issues. This would work just fine in the first region, but in subsequent regions, you’d start seeing errors when applying your terraform since the resource <code class="language-plaintext highlighter-rouge">my_lambda_role</code> already exists. The easiest way to solve for this, is to include the region/workspace in the name of the resource being created. For example, the following config will create distinctly named IAM roles</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="nx">resource</span> <span class="s2">"aws_iam_role"</span> <span class="s2">"lambda_role"</span> <span class="p">{</span>
- <span class="nx">name</span>     <span class="o">=</span> <span class="s2">"my_lambda_role_${terraform.workspace}"</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">resource</span> <span class="dl">"</span><span class="s2">aws_iam_role</span><span class="dl">"</span> <span class="dl">"</span><span class="s2">lambda_role</span><span class="dl">"</span> <span class="p">{</span>
+ <span class="nx">name</span>     <span class="o">=</span> <span class="dl">"</span><span class="s2">my_lambda_role_${terraform.workspace}</span><span class="dl">"</span>
  <span class="nx">assume_role_policy</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="nx">EOF</span>
 <span class="p">{</span>
- <span class="s2">"Version"</span><span class="err">:</span> <span class="s2">"2012-10-17"</span><span class="p">,</span>
- <span class="s2">"Statement"</span><span class="err">:</span> <span class="p">[</span>
+ <span class="dl">"</span><span class="s2">Version</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2012-10-17</span><span class="dl">"</span><span class="p">,</span>
+ <span class="dl">"</span><span class="s2">Statement</span><span class="dl">"</span><span class="p">:</span> <span class="p">[</span>
    <span class="p">{</span>
-     <span class="s2">"Sid"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span>
-     <span class="s2">"Effect"</span><span class="p">:</span> <span class="s2">"Allow"</span><span class="p">,</span>
-     <span class="s2">"Principal"</span><span class="p">:</span> <span class="p">{</span>
-       <span class="s2">"Service"</span><span class="p">:</span> <span class="s2">"lambda.amazonaws.com"</span>
+     <span class="dl">"</span><span class="s2">Sid</span><span class="dl">"</span><span class="p">:</span> <span class="dl">""</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Effect</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Allow</span><span class="dl">"</span><span class="p">,</span>
+     <span class="dl">"</span><span class="s2">Principal</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+       <span class="dl">"</span><span class="s2">Service</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">lambda.amazonaws.com</span><span class="dl">"</span>
      <span class="p">},</span>
-     <span class="s2">"Action"</span><span class="err">:</span> <span class="s2">"sts:AssumeRole"</span>
+     <span class="dl">"</span><span class="s2">Action</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">sts:AssumeRole</span><span class="dl">"</span>
    <span class="p">}</span>
  <span class="p">]</span>
 <span class="p">}</span>
 <span class="nx">EOF</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
-<p>This would create a <code class="highlighter-rouge">my_lambda_role_us-east-1</code> role in us-east-1 and a <code class="highlighter-rouge">my_lambda_role_us-west-2</code> role in us-west-2. And we have maintained our objective of a single configuration that can be deployed seamlessly into multiple regions.</p>
+<p>This would create a <code class="language-plaintext highlighter-rouge">my_lambda_role_us-east-1</code> role in us-east-1 and a <code class="language-plaintext highlighter-rouge">my_lambda_role_us-west-2</code> role in us-west-2. And we have maintained our objective of a single configuration that can be deployed seamlessly into multiple regions.</p>
 
 <h3 id="conclusion">Conclusion</h3>
 
@@ -332,7 +327,7 @@
       </div>
 
       <footer class="footer">
-  <span class="footer__copyright">&copy; 2018 Shanid Gafur. All rights reserved.</span>
+  <span class="footer__copyright">&copy; 2024 Shanid Gafur. All rights reserved.</span>
 </footer> 
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
